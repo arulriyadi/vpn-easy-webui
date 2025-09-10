@@ -113,8 +113,8 @@
           <p class="text-muted mt-2">No users found</p>
         </div>
         <div v-else class="table-responsive">
-          <table class="table table-hover mb-0">
-            <thead class="table-light">
+          <table class="table table-hover table-dark mb-0">
+            <thead>
               <tr>
                 <th>Username</th>
                 <th>Full Name</th>
@@ -637,5 +637,34 @@ export default {
   right: 20px;
   z-index: 1050;
   min-width: 300px;
+}
+
+/* Dark theme table styling */
+.table-dark {
+  --bs-table-bg: #212529;
+  --bs-table-striped-bg: #2c3034;
+  --bs-table-striped-color: #fff;
+  --bs-table-active-bg: #373b3e;
+  --bs-table-active-color: #fff;
+  --bs-table-hover-bg: #323539;
+  --bs-table-hover-color: #fff;
+  color: #fff;
+  border-color: #373b3e;
+}
+
+.table-dark th,
+.table-dark td {
+  border-color: #373b3e;
+}
+
+.table-dark thead th {
+  border-color: #373b3e;
+  background-color: #343a40;
+  color: #fff;
+}
+
+.table-dark tbody tr:hover {
+  background-color: #323539;
+  color: #fff;
 }
 </style>
