@@ -31,7 +31,7 @@ SystemStatus = SystemStatus()
 FirewallManager = FirewallManager()
 RouteManager = RouteManager()
 LoggingManager = LoggingManager()
-UserManager = UserManager()
+UserManager = UserManager(db_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db', 'users.db'))
 
 DASHBOARD_VERSION = 'v4.2.5'
 
