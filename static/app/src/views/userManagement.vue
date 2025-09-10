@@ -345,6 +345,8 @@
 </template>
 
 <script>
+import {fetchGet, fetchPost, fetchDelete} from "@/utilities/fetch.js";
+
 export default {
   name: 'UserManagement',
   data() {
@@ -405,8 +407,7 @@ export default {
     async loadUsers() {
       this.loading = true;
       try {
-        const response = await fetch('/api/users');
-        const result = await response.json();
+        const result = await fetchGet('/api/users');
         
         if (result.success) {
           this.users = result.data;
@@ -423,8 +424,7 @@ export default {
     
     async loadStatistics() {
       try {
-        const response = await fetch('/api/users/statistics');
-        const result = await response.json();
+        const result = await fetchGet('/api/users/statistics');
         
         if (result.success) {
           this.statistics = result.data;
@@ -453,8 +453,7 @@ export default {
       this.showPermissionsModal = true;
       
       try {
-        const response = await fetch(`/api/users/${user.id}/permissions`);
-        const result = await response.json();
+        const result = await fetchGet(`/api/users/${user.id}/permissions`);
         
         if (result.success) {
           this.userPermissions = result.data;
@@ -472,18 +471,12 @@ export default {
     async saveUser() {
       this.saving = true;
       try {
-        const url = this.editingUser ? `/api/users/${this.editingUser.id}` : '/api/users';
-        const method = this.editingUser ? 'PUT' : 'POST';
-        
-        const response = await fetch(url, {
-          method: method,
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(this.userForm)
-        });
-        
-        const result = await response.json();
+        let result;
+        if (this.editingUser) {
+          result = await fetchPost(`/api/users/${this.editingUser.id}`, this.userForm);
+        } else {
+          result = await fetchPost('/api/users', this.userForm);
+        }
         
         if (result.success) {
           this.showAlert('success', result.message);
@@ -507,11 +500,7 @@ export default {
       }
       
       try {
-        const response = await fetch(`/api/users/${user.id}`, {
-          method: 'DELETE'
-        });
-        
-        const result = await response.json();
+        const result = await fetchDelete(`/api/users/${user.id}`);
         
         if (result.success) {
           this.showAlert('success', result.message);
@@ -528,15 +517,7 @@ export default {
     
     async grantPermission(permission) {
       try {
-        const response = await fetch(`/api/users/${this.selectedUser.id}/permissions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ permission })
-        });
-        
-        const result = await response.json();
+        const result = await fetchPost(`/api/users/${this.selectedUser.id}/permissions`, { permission });
         
         if (result.success) {
           this.userPermissions.push(permission);
@@ -552,11 +533,7 @@ export default {
     
     async revokePermission(permission) {
       try {
-        const response = await fetch(`/api/users/${this.selectedUser.id}/permissions/${permission}`, {
-          method: 'DELETE'
-        });
-        
-        const result = await response.json();
+        const result = await fetchDelete(`/api/users/${this.selectedUser.id}/permissions/${permission}`);
         
         if (result.success) {
           this.userPermissions = this.userPermissions.filter(p => p !== permission);
