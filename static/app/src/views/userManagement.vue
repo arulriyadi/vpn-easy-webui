@@ -410,7 +410,7 @@ export default {
         const result = await fetchGet('/api/users');
         console.log('Users API response:', result);
         
-        if (result.success) {
+        if (result.status) {
           this.users = result.data;
           console.log('Users data set:', this.users);
         } else {
@@ -429,7 +429,7 @@ export default {
         const result = await fetchGet('/api/users/statistics');
         console.log('Statistics API response:', result);
         
-        if (result.success) {
+        if (result.status) {
           this.statistics = result.data;
           console.log('Statistics data set:', this.statistics);
         }
@@ -459,7 +459,7 @@ export default {
       try {
         const result = await fetchGet(`/api/users/${user.id}/permissions`);
         
-        if (result.success) {
+        if (result.status) {
           this.userPermissions = result.data;
         } else {
           this.showAlert('error', result.message);
@@ -482,7 +482,7 @@ export default {
           result = await fetchPost('/api/users', this.userForm);
         }
         
-        if (result.success) {
+        if (result.status) {
           this.showAlert('success', result.message);
           this.closeModal();
           this.loadUsers();
@@ -506,7 +506,7 @@ export default {
       try {
         const result = await fetchDelete(`/api/users/${user.id}`);
         
-        if (result.success) {
+        if (result.status) {
           this.showAlert('success', result.message);
           this.loadUsers();
           this.loadStatistics();
@@ -523,7 +523,7 @@ export default {
       try {
         const result = await fetchPost(`/api/users/${this.selectedUser.id}/permissions`, { permission });
         
-        if (result.success) {
+        if (result.status) {
           this.userPermissions.push(permission);
           this.showAlert('success', 'Permission granted successfully');
         } else {
@@ -539,7 +539,7 @@ export default {
       try {
         const result = await fetchDelete(`/api/users/${this.selectedUser.id}/permissions/${permission}`);
         
-        if (result.success) {
+        if (result.status) {
           this.userPermissions = this.userPermissions.filter(p => p !== permission);
           this.showAlert('success', 'Permission revoked successfully');
         } else {
