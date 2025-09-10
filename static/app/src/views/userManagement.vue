@@ -408,9 +408,11 @@ export default {
       this.loading = true;
       try {
         const result = await fetchGet('/api/users');
+        console.log('Users API response:', result);
         
         if (result.success) {
           this.users = result.data;
+          console.log('Users data set:', this.users);
         } else {
           this.showAlert('error', result.message);
         }
@@ -425,9 +427,11 @@ export default {
     async loadStatistics() {
       try {
         const result = await fetchGet('/api/users/statistics');
+        console.log('Statistics API response:', result);
         
         if (result.success) {
           this.statistics = result.data;
+          console.log('Statistics data set:', this.statistics);
         }
       } catch (error) {
         console.error('Error loading statistics:', error);
