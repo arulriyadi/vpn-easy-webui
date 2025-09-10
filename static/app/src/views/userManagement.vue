@@ -190,8 +190,8 @@
     </div>
 
     <!-- Create/Edit User Modal -->
-    <div class="modal fade" :class="{ show: showCreateModal || showEditModal }" 
-         :style="{ display: showCreateModal || showEditModal ? 'block' : 'none' }" 
+    <div v-if="showCreateModal || showEditModal" class="modal fade show" 
+         style="display: block; background-color: rgba(0,0,0,0.5);" 
          tabindex="-1">
       <div class="modal-dialog">
         <div class="modal-content">
@@ -277,8 +277,8 @@
     </div>
 
     <!-- Permissions Modal -->
-    <div class="modal fade" :class="{ show: showPermissionsModal }" 
-         :style="{ display: showPermissionsModal ? 'block' : 'none' }" 
+    <div v-if="showPermissionsModal" class="modal fade show" 
+         style="display: block; background-color: rgba(0,0,0,0.5);" 
          tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -616,6 +616,11 @@ export default {
 
 .modal {
   background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1050;
+}
+
+.modal.show {
+  display: block !important;
 }
 
 .table th {
