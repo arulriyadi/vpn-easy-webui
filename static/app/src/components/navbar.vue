@@ -132,6 +132,12 @@ export default {
 						</RouterLink>
 					</li>
 					<li class="nav-item">
+						<RouterLink to="/user_management" class="nav-link rounded-3" active-class="active">
+							<i class="bi bi-people me-2"></i>
+							<LocaleText t="User Management"></LocaleText>
+						</RouterLink>
+					</li>
+					<li class="nav-item">
 						<RouterLink to="/ping" class="nav-link rounded-3" active-class="active">
 							<i class="bi bi-broadcast me-2"></i>
 							<LocaleText t="Ping"></LocaleText>

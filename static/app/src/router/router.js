@@ -105,6 +105,14 @@ const router = createRouter({
 					}
 				},
 				{
+					name: "User Management",
+					path: '/user_management',
+					component: () => import("@/views/userManagement.vue"),
+					meta: {
+						title: "User Management"
+					}
+				},
+				{
 					name: "Configuration",
 					path: '/configuration/:id',
 					component: () => import('@/views/configuration.vue'),

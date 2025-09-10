@@ -26,10 +26,12 @@ from modules.SystemStatus import SystemStatus
 from modules.FirewallManager import FirewallManager
 from modules.RouteManager import RouteManager
 from modules.LoggingManager import LoggingManager
+from modules.UserManager import UserManager
 SystemStatus = SystemStatus()
 FirewallManager = FirewallManager()
 RouteManager = RouteManager()
 LoggingManager = LoggingManager()
+UserManager = UserManager()
 
 DASHBOARD_VERSION = 'v4.2.5'
 
@@ -3495,6 +3497,226 @@ def API_getSystemInfo():
         return ResponseObject(True, "System info retrieved successfully", info)
     except Exception as e:
         return ResponseObject(False, f"Error retrieving system info: {str(e)}", status_code=500)
+
+# ============================================================================
+# USER MANAGEMENT API ENDPOINTS
+# ============================================================================
+
+@app.route(f'{APP_PREFIX}/api/users', methods=["GET"])
+def API_getUsers():
+    """Get all users"""
+    try:
+        users = UserManager.get_users()
+        return ResponseObject(True, "Users retrieved successfully", users)
+    except Exception as e:
+        return ResponseObject(False, f"Error retrieving users: {str(e)}", status_code=500)
+
+@app.route(f'{APP_PREFIX}/api/users', methods=["POST"])
+def API_createUser():
+    """Create new user"""
+    try:
+        data = request.get_json()
+        if not data:
+            return ResponseObject(False, "No data provided", status_code=400)
+        
+        username = data.get('username')
+        password = data.get('password')
+        email = data.get('email')
+        full_name = data.get('full_name')
+        role = data.get('role', 'user')
+        
+        if not username or not password:
+            return ResponseObject(False, "Username and password are required", status_code=400)
+        
+        result = UserManager.create_user(
+            username=username,
+            password=password,
+            email=email,
+            full_name=full_name,
+            role=role
+        )
+        
+        if result['success']:
+            # Log user creation
+            LoggingManager.log_activity(
+                level='info',
+                category='user_management',
+                message=f'User created: {username} (role: {role})',
+                user=request.remote_addr,
+                ip_address=request.remote_addr
+            )
+            return ResponseObject(True, result['message'], result)
+        else:
+            return ResponseObject(False, result['message'], status_code=400)
+            
+    except Exception as e:
+        return ResponseObject(False, f"Error creating user: {str(e)}", status_code=500)
+
+@app.route(f'{APP_PREFIX}/api/users/<int:user_id>', methods=["PUT"])
+def API_updateUser(user_id):
+    """Update user"""
+    try:
+        data = request.get_json()
+        if not data:
+            return ResponseObject(False, "No data provided", status_code=400)
+        
+        # Remove fields that shouldn't be updated directly
+        update_data = {k: v for k, v in data.items() if k in ['email', 'full_name', 'role', 'is_active', 'password']}
+        
+        if not update_data:
+            return ResponseObject(False, "No valid fields to update", status_code=400)
+        
+        result = UserManager.update_user(user_id, **update_data)
+        
+        if result['success']:
+            # Log user update
+            LoggingManager.log_activity(
+                level='info',
+                category='user_management',
+                message=f'User updated: ID {user_id}',
+                user=request.remote_addr,
+                ip_address=request.remote_addr
+            )
+            return ResponseObject(True, result['message'], result)
+        else:
+            return ResponseObject(False, result['message'], status_code=400)
+            
+    except Exception as e:
+        return ResponseObject(False, f"Error updating user: {str(e)}", status_code=500)
+
+@app.route(f'{APP_PREFIX}/api/users/<int:user_id>', methods=["DELETE"])
+def API_deleteUser(user_id):
+    """Delete user"""
+    try:
+        result = UserManager.delete_user(user_id)
+        
+        if result['success']:
+            # Log user deletion
+            LoggingManager.log_activity(
+                level='warning',
+                category='user_management',
+                message=f'User deleted: ID {user_id}',
+                user=request.remote_addr,
+                ip_address=request.remote_addr
+            )
+            return ResponseObject(True, result['message'], result)
+        else:
+            return ResponseObject(False, result['message'], status_code=400)
+            
+    except Exception as e:
+        return ResponseObject(False, f"Error deleting user: {str(e)}", status_code=500)
+
+@app.route(f'{APP_PREFIX}/api/users/<int:user_id>/permissions', methods=["GET"])
+def API_getUserPermissions(user_id):
+    """Get user permissions"""
+    try:
+        permissions = UserManager.get_user_permissions(user_id)
+        return ResponseObject(True, "User permissions retrieved successfully", permissions)
+    except Exception as e:
+        return ResponseObject(False, f"Error retrieving user permissions: {str(e)}", status_code=500)
+
+@app.route(f'{APP_PREFIX}/api/users/<int:user_id>/permissions', methods=["POST"])
+def API_grantPermission(user_id):
+    """Grant permission to user"""
+    try:
+        data = request.get_json()
+        if not data or 'permission' not in data:
+            return ResponseObject(False, "Permission is required", status_code=400)
+        
+        permission = data['permission']
+        success = UserManager.grant_permission(user_id, permission)
+        
+        if success:
+            # Log permission grant
+            LoggingManager.log_activity(
+                level='info',
+                category='user_management',
+                message=f'Permission granted: {permission} to user ID {user_id}',
+                user=request.remote_addr,
+                ip_address=request.remote_addr
+            )
+            return ResponseObject(True, "Permission granted successfully")
+        else:
+            return ResponseObject(False, "Failed to grant permission", status_code=400)
+            
+    except Exception as e:
+        return ResponseObject(False, f"Error granting permission: {str(e)}", status_code=500)
+
+@app.route(f'{APP_PREFIX}/api/users/<int:user_id>/permissions/<permission>', methods=["DELETE"])
+def API_revokePermission(user_id, permission):
+    """Revoke permission from user"""
+    try:
+        success = UserManager.revoke_permission(user_id, permission)
+        
+        if success:
+            # Log permission revocation
+            LoggingManager.log_activity(
+                level='info',
+                category='user_management',
+                message=f'Permission revoked: {permission} from user ID {user_id}',
+                user=request.remote_addr,
+                ip_address=request.remote_addr
+            )
+            return ResponseObject(True, "Permission revoked successfully")
+        else:
+            return ResponseObject(False, "Failed to revoke permission", status_code=400)
+            
+    except Exception as e:
+        return ResponseObject(False, f"Error revoking permission: {str(e)}", status_code=500)
+
+@app.route(f'{APP_PREFIX}/api/users/statistics', methods=["GET"])
+def API_getUserStatistics():
+    """Get user statistics"""
+    try:
+        stats = UserManager.get_user_statistics()
+        return ResponseObject(True, "User statistics retrieved successfully", stats)
+    except Exception as e:
+        return ResponseObject(False, f"Error retrieving user statistics: {str(e)}", status_code=500)
+
+@app.route(f'{APP_PREFIX}/api/users/authenticate', methods=["POST"])
+def API_authenticateUser():
+    """Authenticate user (for future OpenVPN integration)"""
+    try:
+        data = request.get_json()
+        if not data:
+            return ResponseObject(False, "No data provided", status_code=400)
+        
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return ResponseObject(False, "Username and password are required", status_code=400)
+        
+        result = UserManager.authenticate_user(
+            username=username,
+            password=password,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent')
+        )
+        
+        if result['success']:
+            # Log successful authentication
+            LoggingManager.log_activity(
+                level='info',
+                category='authentication',
+                message=f'User authenticated: {username}',
+                user=request.remote_addr,
+                ip_address=request.remote_addr
+            )
+            return ResponseObject(True, "Authentication successful", result)
+        else:
+            # Log failed authentication
+            LoggingManager.log_activity(
+                level='warning',
+                category='authentication',
+                message=f'Authentication failed: {username} - {result["message"]}',
+                user=request.remote_addr,
+                ip_address=request.remote_addr
+            )
+            return ResponseObject(False, result['message'], status_code=401)
+            
+    except Exception as e:
+        return ResponseObject(False, f"Error authenticating user: {str(e)}", status_code=500)
 
 def startThreads():
     bgThread = threading.Thread(target=peerInformationBackgroundThread, daemon=True)
