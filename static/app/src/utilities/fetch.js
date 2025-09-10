@@ -84,6 +84,37 @@ export const fetchPost = async (url, body, callback) => {
 	}
 }
 
+export const fetchPut = async (url, body, callback) => {
+	try {
+		const response = await fetch(`${getUrl(url)}`, {
+			headers: getHeaders(),
+			method: "PUT",
+			body: JSON.stringify(body)
+		});
+		
+		const store = DashboardConfigurationStore();
+		if (!response.ok){
+			if (response.status !== 200){
+				if (response.status === 401){
+					store.newMessage("WGDashboard", "Sign in session ended, please sign in again", "warning")
+				}
+				throw new Error(response.statusText)
+			}
+		}
+		
+		const data = await response.json();
+		if (callback) {
+			callback(data);
+		}
+		return data;
+	} catch (error) {
+		console.log("Error:", error)
+		// store.newMessage("WGDashboard", `Error: ${error}`, "danger")
+		router.push({path: '/signin'})
+		throw error;
+	}
+}
+
 export const fetchDelete = async (url, callback) => {
 	try {
 		const response = await fetch(`${getUrl(url)}`, {

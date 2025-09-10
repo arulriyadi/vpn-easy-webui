@@ -345,7 +345,7 @@
 </template>
 
 <script>
-import {fetchGet, fetchPost, fetchDelete} from "@/utilities/fetch.js";
+import {fetchGet, fetchPost, fetchPut, fetchDelete} from "@/utilities/fetch.js";
 
 export default {
   name: 'UserManagement',
@@ -477,7 +477,7 @@ export default {
       try {
         let result;
         if (this.editingUser) {
-          result = await fetchPost(`/api/users/${this.editingUser.id}`, this.userForm);
+          result = await fetchPut(`/api/users/${this.editingUser.id}`, this.userForm);
         } else {
           result = await fetchPost('/api/users', this.userForm);
         }
