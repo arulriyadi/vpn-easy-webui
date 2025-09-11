@@ -46,7 +46,6 @@ export const fetchGet = async (url, params=undefined, callback=undefined) => {
 		}
 		return data;
 	} catch (error) {
-		console.log("Error:", error)
 		// store.newMessage("WGDashboard", `Error: ${error}`, "danger")
 		router.push({path: '/signin'})
 		throw error;
@@ -77,7 +76,6 @@ export const fetchPost = async (url, body, callback) => {
 		}
 		return data;
 	} catch (error) {
-		console.log("Error:", error)
 		// store.newMessage("WGDashboard", `Error: ${error}`, "danger")
 		router.push({path: '/signin'})
 		throw error;
@@ -108,7 +106,6 @@ export const fetchPut = async (url, body, callback) => {
 		}
 		return data;
 	} catch (error) {
-		console.log("Error:", error)
 		// store.newMessage("WGDashboard", `Error: ${error}`, "danger")
 		router.push({path: '/signin'})
 		throw error;
@@ -138,7 +135,6 @@ export const fetchDelete = async (url, callback) => {
 		}
 		return data;
 	} catch (error) {
-		console.log("Error:", error)
 		// store.newMessage("WGDashboard", `Error: ${error}`, "danger")
 		router.push({path: '/signin'})
 		throw error;

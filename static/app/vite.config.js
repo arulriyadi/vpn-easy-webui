@@ -52,6 +52,7 @@ export default defineConfig(({mode}) => {
 		build: {
 			target: "es2022",
 			outDir: 'dist',
+			sourcemap: true,
 			rollupOptions: {
 				output: {
 					entryFileNames: `assets/[name]-[hash].js`,
