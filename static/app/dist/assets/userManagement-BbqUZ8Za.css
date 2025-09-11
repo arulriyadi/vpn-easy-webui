@@ -1,0 +1,65 @@
+
+.user-management[data-v-85caffcb] {
+  padding: 20px;
+}
+.modal[data-v-85caffcb] {
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1050;
+}
+.modal.show[data-v-85caffcb] {
+  display: block !important;
+}
+.table th[data-v-85caffcb] {
+  border-top: none;
+  font-weight: 600;
+}
+.badge[data-v-85caffcb] {
+  font-size: 0.75em;
+}
+.card[data-v-85caffcb] {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border: 1px solid rgba(0, 0, 0, 0.125);
+}
+.btn-group-sm > .btn[data-v-85caffcb] {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+.list-group-item[data-v-85caffcb] {
+  border: 1px solid rgba(0, 0, 0, 0.125);
+}
+.list-group-item[data-v-85caffcb]:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+.alert[data-v-85caffcb] {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050;
+  min-width: 300px;
+}
+
+/* Dark theme table styling */
+.table-dark[data-v-85caffcb] {
+  --bs-table-bg: #212529;
+  --bs-table-striped-bg: #2c3034;
+  --bs-table-striped-color: #fff;
+  --bs-table-active-bg: #373b3e;
+  --bs-table-active-color: #fff;
+  --bs-table-hover-bg: #323539;
+  --bs-table-hover-color: #fff;
+  color: #fff;
+  border-color: #373b3e;
+}
+.table-dark th[data-v-85caffcb],
+.table-dark td[data-v-85caffcb] {
+  border-color: #373b3e;
+}
+.table-dark thead th[data-v-85caffcb] {
+  border-color: #373b3e;
+  background-color: #343a40;
+  color: #fff;
+}
+.table-dark tbody tr[data-v-85caffcb]:hover {
+  background-color: #323539;
+  color: #fff;
+}

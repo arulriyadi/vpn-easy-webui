@@ -1,0 +1,11 @@
+
+.square[data-v-2ad535bb]{
+	height: var(--2ec4d3bc);
+	transition: background-color 0.5s cubic-bezier(0.42, 0, 0.22, 1.0);
+}
+
+
+.square[data-v-9509d7a0]{
+	height: var(--2dc8ab7e);
+	transition: background-color 0.5s cubic-bezier(0.42, 0, 0.22, 1.0);
+}
