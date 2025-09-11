@@ -32,7 +32,7 @@ export default {
 		}
 	},
 	mounted() {
-		this.value = this.store.Configuration.Server[this.targetData];
+		this.value = this.store.Configuration?.Server?.[this.targetData];
 	},
 	methods:{
 		async useValidation(){

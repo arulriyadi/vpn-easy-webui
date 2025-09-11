@@ -29,8 +29,8 @@ export default {
 		}
 	},
 	mounted() {
-		this.app_ip = this.store.Configuration.Server.app_ip;
-		this.app_port = this.store.Configuration.Server.app_port;
+		this.app_ip = this.store.Configuration?.Server?.app_ip;
+		this.app_port = this.store.Configuration?.Server?.app_port;
 	},
 	methods:{
 		async useValidation(){

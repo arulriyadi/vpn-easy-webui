@@ -23,8 +23,8 @@ export default {
 		}
 	},
 	mounted() {
-		this.ipAddress = this.store.Configuration.Server.app_ip
-		this.port = this.store.Configuration.Server.app_port
+		this.ipAddress = this.store.Configuration?.Server?.app_ip
+		this.port = this.store.Configuration?.Server?.app_port
 	},
 	methods: {
 		async useValidation(e, targetData, value){
@@ -38,7 +38,9 @@ export default {
 					if (res.status){
 						e.target.classList.add("is-valid")
 						this.showInvalidFeedback = false;
-						this.store.Configuration.Server[targetData] = value
+						if (this.store.Configuration?.Server) {
+							this.store.Configuration.Server[targetData] = value;
+						}
 						clearTimeout(this.timeout)
 						this.timeout = setTimeout(() => {
 							e.target.classList.remove("is-valid")

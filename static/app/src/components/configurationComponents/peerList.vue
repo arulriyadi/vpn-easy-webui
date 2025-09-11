@@ -101,7 +101,7 @@ const setFetchPeerListInterval = () => {
 	clearInterval(fetchPeerListInterval.value)
 	fetchPeerListInterval.value = setInterval(async () => {
 		await fetchPeerList()
-	},  parseInt(dashboardStore.Configuration.Server.dashboard_refresh_interval))
+	},  parseInt(dashboardStore.Configuration?.Server?.dashboard_refresh_interval))
 }
 setFetchPeerListInterval()
 onBeforeUnmount(() => {
@@ -110,7 +110,7 @@ onBeforeUnmount(() => {
 })
 
 watch(() => {
-	return dashboardStore.Configuration.Server.dashboard_refresh_interval
+	return dashboardStore.Configuration?.Server?.dashboard_refresh_interval
 }, () => {
 	setFetchPeerListInterval()
 })
@@ -160,14 +160,14 @@ const searchPeers = computed(() => {
 				x.allowed_ip.includes(wireguardConfigurationStore.searchString)
 		}) : configurationPeers.value;
 
-	if (dashboardStore.Configuration.Server.dashboard_sort === "restricted"){
+	if (dashboardStore.Configuration?.Server?.dashboard_sort === "restricted"){
 		return result.sort((a, b) => {
-			if ( a[dashboardStore.Configuration.Server.dashboard_sort]
-				< b[dashboardStore.Configuration.Server.dashboard_sort] ){
+			if ( a[dashboardStore.Configuration?.Server?.dashboard_sort]
+				< b[dashboardStore.Configuration?.Server?.dashboard_sort] ){
 				return 1;
 			}
-			if ( a[dashboardStore.Configuration.Server.dashboard_sort]
-				> b[dashboardStore.Configuration.Server.dashboard_sort]){
+			if ( a[dashboardStore.Configuration?.Server?.dashboard_sort]
+				> b[dashboardStore.Configuration?.Server?.dashboard_sort]){
 				return -1;
 			}
 			return 0;
@@ -175,12 +175,12 @@ const searchPeers = computed(() => {
 	}
 
 	return result.sort((a, b) => {
-		if ( a[dashboardStore.Configuration.Server.dashboard_sort]
-			< b[dashboardStore.Configuration.Server.dashboard_sort] ){
+		if ( a[dashboardStore.Configuration?.Server?.dashboard_sort]
+			< b[dashboardStore.Configuration?.Server?.dashboard_sort] ){
 			return -1;
 		}
-		if ( a[dashboardStore.Configuration.Server.dashboard_sort]
-			> b[dashboardStore.Configuration.Server.dashboard_sort]){
+		if ( a[dashboardStore.Configuration?.Server?.dashboard_sort]
+			> b[dashboardStore.Configuration?.Server?.dashboard_sort]){
 			return 1;
 		}
 		return 0;
@@ -351,7 +351,7 @@ const searchPeers = computed(() => {
 		</PeerSearch>
 		<TransitionGroup name="peerList" tag="div" class="row gx-2 gy-2 z-0 position-relative">
 			<div class="col-12"
-			     :class="{'col-lg-6 col-xl-4': dashboardStore.Configuration.Server.dashboard_peer_list_display === 'grid'}"
+			     :class="{'col-lg-6 col-xl-4': dashboardStore.Configuration?.Server?.dashboard_peer_list_display === 'grid'}"
 			     :key="peer.id"
 			     v-for="peer in searchPeers">
 				<Peer :Peer="peer"

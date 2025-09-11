@@ -26,7 +26,7 @@ const route = useRoute()
 				<img src="/img/Logo-2-Rounded-512x512.png" 
 				     alt="WGDashboard Logo" 
 				     style="width: 32px;"
-				     :style="{ filter: store.Configuration.Server.dashboard_theme === 'dark' ? 'brightness(1.2)' : 'brightness(0.8)' }">
+				     :style="{ filter: store.Configuration?.Server?.dashboard_theme === 'dark' ? 'brightness(1.2)' : 'brightness(0.8)' }">
 			</RouterLink>
 			<a role="button" class="navbarBtn text-body"
 			   @click="store.ShowNavBar = !store.ShowNavBar"

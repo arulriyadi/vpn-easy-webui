@@ -53,7 +53,7 @@ export default {
 <template>
 	<div class="col-md-3 col-lg-2 d-md-block p-2 navbar-container"
 	     :class="{active: this.dashboardConfigurationStore.ShowNavBar}"
-	     :data-bs-theme="dashboardConfigurationStore.Configuration.Server.dashboard_theme"
+	     :data-bs-theme="dashboardConfigurationStore.Configuration?.Server?.dashboard_theme"
 	>
 		<nav id="sidebarMenu" class=" bg-body-tertiary sidebar border h-100 rounded-3 shadow overflow-y-scroll" >
 			<div class="sidebar-sticky ">
@@ -88,7 +88,7 @@ export default {
 				</ul>
 				<hr class="text-body my-2">
 				<h6 class="sidebar-heading px-3 mt-3 mb-1 text-center" 
-				    :class="dashboardConfigurationStore.Configuration.Server.dashboard_theme === 'dark' ? 'text-light-emphasis' : 'text-muted'">
+				    :class="dashboardConfigurationStore.Configuration?.Server?.dashboard_theme === 'dark' ? 'text-light-emphasis' : 'text-muted'">
 					<LocaleText t="WireGuard Configurations"></LocaleText>
 				</h6>
 				<ul class="nav flex-column px-2 gap-1">
@@ -103,7 +103,7 @@ export default {
 				</ul>
 				<hr class="text-body my-2">
 				<h6 class="sidebar-heading px-3 mt-3 mb-1 text-center" 
-				    :class="dashboardConfigurationStore.Configuration.Server.dashboard_theme === 'dark' ? 'text-light-emphasis' : 'text-muted'">
+				    :class="dashboardConfigurationStore.Configuration?.Server?.dashboard_theme === 'dark' ? 'text-light-emphasis' : 'text-muted'">
 					<LocaleText t="Tools"></LocaleText>
 				</h6>
 				<ul class="nav flex-column px-2 gap-1">
@@ -163,12 +163,12 @@ export default {
 						<a :href="this.updateUrl" v-if="this.updateAvailable" class="text-decoration-none rounded-3" target="_blank">
 							<small class="nav-link text-muted rounded-3" >
 								<LocaleText :t="this.updateMessage"></LocaleText>
-								(<LocaleText t="Current Version:"></LocaleText> {{ dashboardConfigurationStore.Configuration.Server.version }})
+								(<LocaleText t="Current Version:"></LocaleText> {{ dashboardConfigurationStore.Configuration?.Server?.version }})
 							</small>
 						</a>
 						<small class="nav-link text-muted rounded-3" v-else>
 							<LocaleText :t="this.updateMessage"></LocaleText>
-							({{ dashboardConfigurationStore.Configuration.Server.version }})
+							({{ dashboardConfigurationStore.Configuration?.Server?.version }})
 						</small>
 					</li>
 				</ul>

@@ -15,7 +15,7 @@ export default {
 	},
 	data(){
 		return {
-			value: this.store.Configuration.Server.dashboard_api_key,
+			value: this.store.Configuration?.Server?.dashboard_api_key,
 			apiKeys: [],
 			newDashboardAPIKey: false
 		}

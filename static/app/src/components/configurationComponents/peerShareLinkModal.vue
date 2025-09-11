@@ -153,7 +153,7 @@ export default {
 								               format="yyyy-MM-dd HH:mm:ss"
 								               preview-format="yyyy-MM-dd HH:mm:ss"
 								               
-								               :dark="this.store.Configuration.Server.dashboard_theme === 'dark'"
+								               :dark="this.store.Configuration?.Server?.dashboard_theme === 'dark'"
 								/>
 							</div>
 							<button

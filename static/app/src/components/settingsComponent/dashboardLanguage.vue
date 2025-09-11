@@ -26,7 +26,9 @@ export default {
 				lang_id: lang_id
 			}, (res) => {
 				if (res.status){
-					this.store.Configuration.Server.dashboard_language = lang_id;
+					if (this.store.Configuration?.Server) {
+						this.store.Configuration.Server.dashboard_language = lang_id;
+					}
 					this.store.Locale = res.data
 				}else{
 					this.store.newMessage("Server", "WGDashboard language update failed", "danger")
@@ -36,7 +38,7 @@ export default {
 	},
 	computed:{
 		currentLanguage(){
-			let lang = this.store.Configuration.Server.dashboard_language;
+			let lang = this.store.Configuration?.Server?.dashboard_language;
 			return this.languages.find(x => x.lang_id === lang)
 		}
 	}
