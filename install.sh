@@ -173,12 +173,27 @@ check_requirements() {
         exit 1
     fi
     
-    # Check and install Python 3
-    if ! command -v python3 &> /dev/null; then
-        print_status "Installing Python 3..."
-        apt-get install -y python3 python3-pip python3-venv
+    # Always install/update Python 3 and related packages
+    print_status "Installing/updating Python 3 and pip..."
+    apt-get install -y python3 python3-pip python3-venv python3-dev
+    
+    # Verify pip3 installation
+    if ! command -v pip3 &> /dev/null; then
+        print_error "Failed to install pip3. Trying alternative installation..."
+        apt-get install -y python3-distutils
+        curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+        python3 get-pip.py
+        rm -f get-pip.py
+    fi
+    
+    # Verify installation
+    if command -v python3 &> /dev/null && command -v pip3 &> /dev/null; then
+        print_success "Python 3 and pip3 are ready"
+        python3 --version
+        pip3 --version
     else
-        print_success "Python 3 is already installed"
+        print_error "Failed to install Python 3 or pip3"
+        exit 1
     fi
     
     # Check and install WireGuard
@@ -273,6 +288,45 @@ copy_application_files() {
     chmod +x $INSTALL_DIR/uninstall.sh
 }
 
+# Function to setup Python virtual environment and dependencies
+setup_python_dependencies() {
+    print_status "Setting up Python virtual environment and dependencies..."
+    
+    cd $INSTALL_DIR
+    
+    # Create virtual environment
+    print_status "Creating Python virtual environment..."
+    python3 -m venv venv
+    
+    # Activate virtual environment and install dependencies
+    print_status "Installing Python packages in virtual environment..."
+    source venv/bin/activate
+    
+    # Upgrade pip
+    pip install --upgrade pip --disable-pip-version-check
+    
+    # Install requirements
+    if [ -f "requirements.txt" ]; then
+        pip install -r requirements.txt --disable-pip-version-check
+        print_success "Python packages installed successfully"
+    else
+        print_error "requirements.txt not found!"
+        exit 1
+    fi
+    
+    # Verify critical packages
+    python -c "import bcrypt, pyotp" 2>/dev/null || {
+        print_error "Failed to import required packages (bcrypt, pyotp)"
+        print_status "Trying to install them manually..."
+        pip install bcrypt pyotp
+    }
+    
+    # Set proper ownership
+    chown -R $SERVICE_USER:$SERVICE_USER venv/
+    
+    print_success "Python virtual environment setup complete"
+}
+
 # Function to update configuration file
 update_configuration() {
     print_status "Creating clean configuration file with user settings..."
@@ -284,14 +338,14 @@ update_configuration() {
         rm "$CONFIG_FILE"
     fi
     
-    # Create new clean configuration file
+    # Create new clean configuration file using virtual environment Python
     cat > "$CONFIG_FILE" << EOF
 [Account]
 username = $CUSTOM_USER
-password = $(python3 -c "import bcrypt; print(bcrypt.hashpw('$CUSTOM_PASS'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'))")
+password = $($INSTALL_DIR/venv/bin/python -c "import bcrypt; print(bcrypt.hashpw('$CUSTOM_PASS'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'))")
 enable_totp = false
 totp_verified = false
-totp_key = $(python3 -c "import pyotp; print(pyotp.random_base32())")
+totp_key = $($INSTALL_DIR/venv/bin/python -c "import pyotp; print(pyotp.random_base32())")
 
 [Server]
 wg_conf_path = /etc/wireguard
@@ -461,6 +515,7 @@ main() {
     stop_existing_service
     create_install_dir
     copy_application_files
+    setup_python_dependencies
     update_configuration
     create_systemd_service
     enable_service
