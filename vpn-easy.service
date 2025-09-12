@@ -1,0 +1,35 @@
+[Unit]
+Description=VPN Easy WebUI - WireGuard VPN Management Dashboard
+Documentation=https://github.com/arulriyadi/vpn-easy-webui
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/vpn-easy
+ExecStart=/opt/vpn-easy/start.sh
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vpn-easy
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=false
+ProtectHome=false
+ReadWritePaths=/opt/vpn-easy /var/log/vpn-easy /etc/wireguard /root/.local
+
+# Environment
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=PYTHONPATH=/opt/vpn-easy
+Environment=VPN_EASY_PORT=10081
+Environment=VPN_EASY_USER=admin
+Environment=VPN_EASY_PASS=admin
+
+[Install]
+WantedBy=multi-user.target
