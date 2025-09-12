@@ -31,11 +31,11 @@ const router = createRouter({
 			},
 			children: [
 				{
-					name: "Configuration List",
+					name: "Dashboard",
 					path: '',
-					component: () => import('@/components/configurationList.vue'),
+					component: () => import('@/components/dashboardHome.vue'),
 					meta: {
-						title: "WireGuard Configurations"
+						title: "Dashboard"
 					}
 				},
 				{
@@ -113,6 +113,14 @@ const router = createRouter({
 					}
 				},
 				{
+					name: "WireGuard Configurations",
+					path: '/wireguard_configurations',
+					component: () => import('@/components/configurationList.vue'),
+					meta: {
+						title: "WireGuard Configurations"
+					}
+				},
+				{
 					name: "Configuration",
 					path: '/configuration/:id',
 					component: () => import('@/views/configuration.vue'),
@@ -181,8 +189,11 @@ router.beforeEach(async (to, from, next) => {
 		document.title = "WGDashboard"
 	}
 	dashboardConfigurationStore.ShowNavBar = false;
-	document.querySelector(".loadingBar").classList.remove("loadingDone")
-	document.querySelector(".loadingBar").classList.add("loading")
+	const loadingBar = document.querySelector(".loadingBar");
+	if (loadingBar) {
+		loadingBar.classList.remove("loadingDone");
+		loadingBar.classList.add("loading");
+	}
 	if (to.meta.requiresAuth){
 		if (!dashboardConfigurationStore.getActiveCrossServer()){
 			if (await checkAuth()){
@@ -211,7 +222,10 @@ router.beforeEach(async (to, from, next) => {
 });
 
 router.afterEach(() => {
-	document.querySelector(".loadingBar").classList.remove("loading")
-	document.querySelector(".loadingBar").classList.add("loadingDone")
+	const loadingBar = document.querySelector(".loadingBar");
+	if (loadingBar) {
+		loadingBar.classList.remove("loading");
+		loadingBar.classList.add("loadingDone");
+	}
 })
 export default router

@@ -22,6 +22,7 @@ export default {
 			updateUrl: "",
 			openHelpModal: false,
 			openAgentModal: false,
+			showVpnDropdown: false,
 		}
 	},
 	computed: {
@@ -46,6 +47,11 @@ export default {
 				console.log(`Failed to get update: ${res.message}`)
 			}
 		})
+	},
+	methods: {
+		toggleVpnDropdown() {
+			this.showVpnDropdown = !this.showVpnDropdown;
+		}
 	}
 }
 </script>
@@ -89,16 +95,31 @@ export default {
 				<hr class="text-body my-2">
 				<h6 class="sidebar-heading px-3 mt-3 mb-1 text-center" 
 				    :class="dashboardConfigurationStore.Configuration?.Server?.dashboard_theme === 'dark' ? 'text-light-emphasis' : 'text-muted'">
-					<LocaleText t="WireGuard Configurations"></LocaleText>
+					<LocaleText t="VPN Management"></LocaleText>
 				</h6>
 				<ul class="nav flex-column px-2 gap-1">
-					<li class="nav-item" v-for="c in this.wireguardConfigurationsStore.Configurations">
-						<RouterLink :to="'/configuration/'+c.Name + '/peers'" class="nav-link nav-conf-link rounded-3"
-						            active-class="active"
-						            >
-							<span class="dot me-2" :class="{active: c.Status}"></span>
-							{{c.Name}}
-						</RouterLink>
+					<li class="nav-item">
+						<a class="nav-link rounded-3 dropdown-toggle" 
+						   @click.prevent="toggleVpnDropdown" 
+						   role="button" 
+						   :class="{ 'show': showVpnDropdown }">
+							<i class="bi bi-shield-lock me-2"></i>
+							<LocaleText t="VPN Management"></LocaleText>
+						</a>
+						<div class="dropdown-menu" 
+						     :class="{ 'show': showVpnDropdown }"
+						     style="position: static; float: none; width: auto; margin-top: 0; background-color: transparent; border: none; box-shadow: none;">
+							<div class="ms-4 mt-1">
+								<!-- WireGuard Management -->
+								<RouterLink to="/wireguard_configurations" 
+											class="nav-link rounded-3"
+											active-class="active"
+											style="padding: 0.5rem 1rem;">
+									<i class="bi bi-shield-lock me-2"></i>
+									<LocaleText t="WireGuard Management"></LocaleText>
+								</RouterLink>
+							</div>
+						</div>
 					</li>
 				</ul>
 				<hr class="text-body my-2">
@@ -301,5 +322,70 @@ export default {
 	transform: translateY(30px);
 	filter: blur(3px);
 	opacity: 0;
+}
+
+/* Dropdown styling */
+.dropdown-toggle {
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+/* Ensure only one chevron is shown - hide Bootstrap default */
+.dropdown-toggle::after {
+	display: none !important;
+}
+
+/* Hide any manual chevron icons */
+.dropdown-toggle .bi-chevron-down,
+.dropdown-toggle .bi-chevron-up {
+	display: none !important;
+}
+
+.dropdown-toggle:hover {
+	background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dropdown-menu {
+	transition: all 0.3s ease;
+	max-height: 0;
+	overflow: hidden;
+	opacity: 0;
+}
+
+.dropdown-menu.show {
+	max-height: 500px;
+	opacity: 1;
+}
+
+/* Dark theme dropdown styling */
+.navbar-container[data-bs-theme="dark"] .dropdown-toggle:hover {
+	background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.navbar-container[data-bs-theme="light"] .dropdown-toggle:hover {
+	background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+
+/* Submenu header styling */
+.nav-submenu-header {
+	border-left: 2px solid var(--bs-gray-400);
+	padding-left: 0.5rem;
+}
+
+.nav-submenu-header small {
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* Dark theme submenu header */
+.navbar-container[data-bs-theme="dark"] .nav-submenu-header {
+	border-left-color: var(--bs-gray-600);
+}
+
+.navbar-container[data-bs-theme="dark"] .nav-submenu-header small {
+	color: var(--bs-gray-400) !important;
 }
 </style>

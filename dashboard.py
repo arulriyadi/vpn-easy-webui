@@ -2061,7 +2061,7 @@ def auth_req():
             whiteList = [
                 '/static/', 'validateAuthentication', 'authenticate',
                 'getDashboardTheme', 'getDashboardVersion', 'sharePeer/get', 'isTotpEnabled', 'locale',
-                '/fileDownload', 'users', 'users/statistics'
+                '/fileDownload', 'users', 'users/statistics', 'systemStatus'
             ]
             
             if ("username" not in session 
