@@ -1,15 +1,18 @@
 <script>
 import {WireguardConfigurationsStore} from "@/stores/WireguardConfigurationsStore.js";
+import {DashboardConfigurationStore} from "@/stores/DashboardConfigurationStore.js";
 import ConfigurationCard from "@/components/configurationListComponents/configurationCard.vue";
 import LocaleText from "@/components/text/localeText.vue";
+import PeersDefaultSettingsInput from "@/components/settingsComponent/peersDefaultSettingsInput.vue";
 import {GetLocale} from "@/utilities/locale.js";
 
 export default {
 	name: "configurationList",
-	components: {LocaleText, ConfigurationCard},
+	components: {LocaleText, ConfigurationCard, PeersDefaultSettingsInput},
 	async setup(){
 		const wireguardConfigurationsStore = WireguardConfigurationsStore();
-		return {wireguardConfigurationsStore}
+		const dashboardConfigurationStore = DashboardConfigurationStore();
+		return {wireguardConfigurationsStore, dashboardConfigurationStore}
 	},
 	data(){
 		return {
@@ -24,7 +27,8 @@ export default {
 				order: "asc"
 			},
 			currentDisplay: "List",
-			searchKey: ""
+			searchKey: "",
+			showPeerSettings: false
 		}
 	},
 	async mounted() {
@@ -88,6 +92,9 @@ export default {
 				this.currentDisplay = key
 				window.localStorage.setItem('ConfigurationListDisplay', this.currentDisplay)
 			}
+		},
+		togglePeerSettings(){
+			this.showPeerSettings = !this.showPeerSettings
 		}
 	}
 }
@@ -108,8 +115,54 @@ export default {
 				            class="py-2 text-decoration-none btn text-primary-emphasis bg-primary-subtle rounded-3 border-1 border-primary-subtle">
 					<i class="bi bi-clock-history me-2"></i><LocaleText t="Restore"></LocaleText>
 				</RouterLink>
+				<button @click="togglePeerSettings" 
+				        class="py-2 text-decoration-none btn text-secondary-emphasis bg-secondary-subtle rounded-3 border-1 border-secondary-subtle">
+					<i class="bi bi-gear me-2"></i><LocaleText t="Peer Settings"></LocaleText>
+				</button>
 				
 			</div>
+			<!-- Peer Settings Panel -->
+			<Transition name="slide-down">
+				<div class="card mb-4" v-if="showPeerSettings">
+					<div class="card-header">
+						<h6 class="my-2 d-flex align-items-center">
+							<i class="bi bi-gear me-2"></i>
+							<LocaleText t="Peer Default Settings"></LocaleText>
+						</h6>
+					</div>
+					<div class="card-body">
+						<div class="row g-3">
+							<div class="col-md-6">
+								<PeersDefaultSettingsInput
+									targetData="peer_global_dns" title="DNS">
+								</PeersDefaultSettingsInput>
+							</div>
+							<div class="col-md-6">
+								<PeersDefaultSettingsInput
+									targetData="peer_endpoint_allowed_ip" title="Endpoint Allowed IPs">
+								</PeersDefaultSettingsInput>
+							</div>
+							<div class="col-md-6">
+								<PeersDefaultSettingsInput
+									targetData="peer_mtu" title="MTU">
+								</PeersDefaultSettingsInput>
+							</div>
+							<div class="col-md-6">
+								<PeersDefaultSettingsInput
+									targetData="peer_keep_alive" title="Persistent Keepalive">
+								</PeersDefaultSettingsInput>
+							</div>
+							<div class="col-12">
+								<PeersDefaultSettingsInput
+									targetData="remote_endpoint" title="Peer Remote Endpoint"
+									:warning="true" warningText="This will be changed globally, and will be apply to all peer's QR code and configuration file.">
+								</PeersDefaultSettingsInput>
+							</div>
+						</div>
+					</div>
+				</div>
+			</Transition>
+
 			<Transition name="fade">
 				<div class="text-body filter mb-3 d-flex gap-2 flex-column flex-md-row" v-if="this.configurationLoaded">
 					<div class="d-flex align-items-center gap-3 align-items-center mb-3 mb-md-0">
@@ -181,5 +234,20 @@ export default {
 <style scoped>
 .filter a{
 	text-decoration: none;
+}
+
+/* Slide down animation for peer settings panel */
+.slide-down-enter-active, .slide-down-leave-active {
+	transition: all 0.3s ease;
+}
+
+.slide-down-enter-from, .slide-down-leave-to {
+	opacity: 0;
+	transform: translateY(-20px);
+}
+
+.slide-down-enter-to, .slide-down-leave-from {
+	opacity: 1;
+	transform: translateY(0);
 }
 </style>
