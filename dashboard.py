@@ -3241,10 +3241,6 @@ JobLogger: PeerJobLogger = PeerJobLogger(CONFIGURATION_PATH, AllPeerJobs)
 DashboardLogger: DashboardLogger = DashboardLogger(CONFIGURATION_PATH)
 _, app_ip = DashboardConfig.GetConfig("Server", "app_ip")
 _, app_port = DashboardConfig.GetConfig("Server", "app_port")
-
-# Override port from environment variable if set
-if os.getenv('VPN_EASY_PORT'):
-    app_port = os.getenv('VPN_EASY_PORT')
 _, WG_CONF_PATH = DashboardConfig.GetConfig("Server", "wg_conf_path")
 
 WireguardConfigurations: dict[str, WireguardConfiguration] = {}

@@ -260,8 +260,11 @@ copy_application_files() {
     # Get the directory where this script is located
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     
-    # Copy all files except .git directory
-    rsync -av --exclude='.git' --exclude='*.log' --exclude='__pycache__' "$SCRIPT_DIR/" "$INSTALL_DIR/"
+    # Copy all files except .git directory and development data
+    rsync -av --exclude='.git' --exclude='*.log' --exclude='__pycache__' --exclude='db/' --exclude='*.db' --exclude='*.sqlite' "$SCRIPT_DIR/" "$INSTALL_DIR/"
+    
+    # Create clean database directory
+    mkdir -p $INSTALL_DIR/db
     
     # Set proper permissions
     chown -R $SERVICE_USER:$SERVICE_USER $INSTALL_DIR
@@ -272,33 +275,67 @@ copy_application_files() {
 
 # Function to update configuration file
 update_configuration() {
-    print_status "Updating configuration file with user settings..."
+    print_status "Creating clean configuration file with user settings..."
     
     CONFIG_FILE="$INSTALL_DIR/wg-dashboard.ini"
     
-    # Update port
-    if grep -q "app_port" "$CONFIG_FILE"; then
-        sed -i "s/app_port = .*/app_port = $CUSTOM_PORT/" "$CONFIG_FILE"
-    else
-        echo "app_port = $CUSTOM_PORT" >> "$CONFIG_FILE"
+    # Remove existing config file to ensure clean installation
+    if [ -f "$CONFIG_FILE" ]; then
+        rm "$CONFIG_FILE"
     fi
     
-    # Update username
-    if grep -q "username" "$CONFIG_FILE"; then
-        sed -i "s/username = .*/username = $CUSTOM_USER/" "$CONFIG_FILE"
-    else
-        echo "username = $CUSTOM_USER" >> "$CONFIG_FILE"
-    fi
+    # Create new clean configuration file
+    cat > "$CONFIG_FILE" << EOF
+[Account]
+username = $CUSTOM_USER
+password = $(python3 -c "import bcrypt; print(bcrypt.hashpw('$CUSTOM_PASS'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'))")
+enable_totp = false
+totp_verified = false
+totp_key = $(python3 -c "import pyotp; print(pyotp.random_base32())")
+
+[Server]
+wg_conf_path = /etc/wireguard
+awg_conf_path = /etc/amnezia/amneziawg
+app_prefix = 
+app_ip = 0.0.0.0
+app_port = $CUSTOM_PORT
+auth_req = true
+version = v4.2.5
+dashboard_refresh_interval = 60000
+dashboard_peer_list_display = grid
+dashboard_sort = status
+dashboard_theme = dark
+dashboard_api_key = false
+dashboard_language = en
+
+[Peers]
+peer_global_dns = 1.1.1.1
+peer_endpoint_allowed_ip = 0.0.0.0/0
+peer_display_mode = grid
+remote_endpoint = 
+peer_mtu = 1420
+peer_keep_alive = 21
+
+[Other]
+welcome_session = false
+
+[Database]
+type = sqlite
+
+[Email]
+server = 
+port = 
+encryption = 
+username = 
+email_password = 
+send_from = 
+email_template = 
+
+[WireGuardConfiguration]
+autostart = 
+EOF
     
-    # Update password (hash the password)
-    HASHED_PASSWORD=$(python3 -c "import bcrypt; print(bcrypt.hashpw('$CUSTOM_PASS'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'))")
-    if grep -q "password" "$CONFIG_FILE"; then
-        sed -i "s/password = .*/password = $HASHED_PASSWORD/" "$CONFIG_FILE"
-    else
-        echo "password = $HASHED_PASSWORD" >> "$CONFIG_FILE"
-    fi
-    
-    print_success "Configuration file updated"
+    print_success "Clean configuration file created"
 }
 
 # Function to create systemd service file
