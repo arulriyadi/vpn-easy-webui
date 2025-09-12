@@ -83,47 +83,6 @@
 			</div>
 		</div>
 
-		<!-- Quick Actions -->
-		<div class="row mb-4">
-			<div class="col-12">
-				<div class="card">
-					<div class="card-header">
-						<h5 class="card-title mb-0">
-							<i class="bi bi-lightning me-2"></i>
-							Quick Actions
-						</h5>
-					</div>
-					<div class="card-body">
-						<div class="row">
-							<div class="col-md-3 mb-3">
-								<RouterLink to="/wireguard_configurations" class="btn btn-outline-primary w-100">
-									<i class="bi bi-list-ul me-2"></i>
-									WireGuard Configurations
-								</RouterLink>
-							</div>
-							<div class="col-md-3 mb-3">
-								<RouterLink to="/vpn_management" class="btn btn-outline-success w-100">
-									<i class="bi bi-shield-lock me-2"></i>
-									VPN Management
-								</RouterLink>
-							</div>
-							<div class="col-md-3 mb-3">
-								<RouterLink to="/user_management" class="btn btn-outline-info w-100">
-									<i class="bi bi-people me-2"></i>
-									User Management
-								</RouterLink>
-							</div>
-							<div class="col-md-3 mb-3">
-								<RouterLink to="/system_status" class="btn btn-outline-warning w-100">
-									<i class="bi bi-cpu me-2"></i>
-									System Status
-								</RouterLink>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
 
 		<!-- System Status -->
 		<div class="row mb-4">

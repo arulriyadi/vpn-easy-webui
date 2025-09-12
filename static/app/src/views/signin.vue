@@ -186,7 +186,7 @@ export default {
 		</div>
 		<small class="text-muted pb-3 d-block w-100 text-center mt-3">
 			WGDashboard {{ this.version }} | Developed with ❤️ by 
-			<a href="https://github.com/donaldzou" target="_blank"><strong>Donald Zou</strong></a>
+			<a href="https://github.com/arulriyadi" target="_blank"><strong>arulriyadi</strong></a>
 		</small>
 		<div class="messageCentre text-body position-absolute d-flex">
 			<TransitionGroup name="message" tag="div"
