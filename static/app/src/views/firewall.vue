@@ -2,21 +2,11 @@
   <div class="container-fluid">
     <div class="row">
       <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="mb-4">
           <h2 class="mb-0">
             <i class="bi bi-shield-check me-2"></i>
             Firewall Management
           </h2>
-          <div>
-            <button class="btn btn-primary me-2" @click="showAddRuleModal = true">
-              <i class="bi bi-plus-circle me-1"></i>
-              Add Rule
-            </button>
-            <button class="btn btn-warning" @click="reloadRules">
-              <i class="bi bi-arrow-clockwise me-1"></i>
-              Reload Rules
-            </button>
-          </div>
         </div>
 
         <!-- Firewall Rules Table -->
@@ -79,6 +69,30 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+          
+          <!-- Action Buttons Row (pfSense style) -->
+          <div class="card-footer bg-subtle border-top">
+            <div class="row align-items-center">
+              <div class="col-md-6">
+                <small class="text-muted">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Total Rules: {{ firewallRules.length }}
+                </small>
+              </div>
+              <div class="col-md-6 text-end">
+                <div class="btn-group" role="group">
+                  <button class="btn btn-primary" @click="showAddRuleModal = true">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    Add Rule
+                  </button>
+                  <button class="btn btn-outline-secondary" @click="reloadRules">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
+                    Reload Rules
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -317,5 +331,173 @@ onMounted(() => {
 
 .toast {
   z-index: 1060;
+}
+
+/* pfSense-style improvements */
+.card-footer {
+  padding: 1rem;
+  background-color: #f8f9fa !important;
+  border-top: 1px solid #e9ecef !important;
+}
+
+/* Dark theme card footer */
+[data-bs-theme="dark"] .card-footer {
+  background-color: #2d3748 !important;
+  border-top: 1px solid #4a5568 !important;
+}
+
+.bg-subtle {
+  background-color: #f8f9fa !important;
+}
+
+/* Dark theme subtle background */
+[data-bs-theme="dark"] .bg-subtle {
+  background-color: #2d3748 !important;
+}
+
+.btn-group .btn {
+  margin-left: 0.25rem;
+}
+
+.btn-group .btn:first-child {
+  margin-left: 0;
+}
+
+.table-responsive {
+  border-radius: 0.375rem;
+}
+
+.table thead th {
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: #343a40;
+  color: #ffffff;
+}
+
+/* Dark theme table header */
+[data-bs-theme="dark"] .table thead th {
+  background-color: #4a5568;
+  color: #ffffff;
+}
+
+.table tbody td {
+  vertical-align: middle;
+  font-size: 0.875rem;
+  background-color: #ffffff;
+}
+
+/* Dark theme table body */
+[data-bs-theme="dark"] .table tbody td {
+  background-color: #1a202c;
+  color: #e2e8f0;
+}
+
+.table tbody tr:nth-child(even) td {
+  background-color: #f8f9fa;
+}
+
+/* Dark theme even rows */
+[data-bs-theme="dark"] .table tbody tr:nth-child(even) td {
+  background-color: #2d3748;
+}
+
+.table tbody tr:hover td {
+  background-color: #e9ecef;
+}
+
+/* Dark theme hover */
+[data-bs-theme="dark"] .table tbody tr:hover td {
+  background-color: #4a5568;
+}
+
+/* Enhanced button styling - softer colors */
+.btn-primary {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: #0b5ed7;
+  border-color: #0a58ca;
+}
+
+.btn-outline-secondary {
+  background-color: transparent;
+  border-color: #6c757d;
+  color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: #ffffff;
+}
+
+/* Rule counter styling */
+.text-muted {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6c757d !important;
+}
+
+/* Dark theme rule counter */
+[data-bs-theme="dark"] .text-muted {
+  color: #a0aec0 !important;
+}
+
+/* Card styling improvements */
+.card {
+  border: 1px solid #dee2e6;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+/* Dark theme card */
+[data-bs-theme="dark"] .card {
+  border: 1px solid #4a5568;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
+  background-color: #1a202c;
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  color: #495057;
+}
+
+/* Dark theme card header */
+[data-bs-theme="dark"] .card-header {
+  background-color: #2d3748;
+  border-bottom: 1px solid #4a5568;
+  color: #e2e8f0;
+}
+
+/* Badge improvements */
+.badge {
+  font-size: 0.75em;
+  font-weight: 500;
+}
+
+.badge.bg-secondary {
+  background-color: #6c757d !important;
+}
+
+.badge.bg-info {
+  background-color: #0dcaf0 !important;
+}
+
+.badge.bg-success {
+  background-color: #198754 !important;
+}
+
+.badge.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #000000 !important;
 }
 </style>

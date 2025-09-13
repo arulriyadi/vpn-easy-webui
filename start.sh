@@ -116,24 +116,24 @@ if [ ! -f "dashboard.py" ]; then
     exit 1
 fi
 
-# Check if modules exist
-if [ ! -f "modules/FirewallManager.py" ] || [ ! -f "modules/RouteManager.py" ] || [ ! -f "modules/LoggingManager.py" ]; then
-    print_error "Required modules not found. Please ensure FirewallManager.py, RouteManager.py, and LoggingManager.py exist in modules/ directory."
+# Check if required modules exist
+if [ ! -f "modules/WireguardConfigurations.py" ] || [ ! -f "modules/DashboardConfiguration.py" ]; then
+    print_error "Required modules not found. Please ensure WireguardConfigurations.py and DashboardConfiguration.py exist in modules/ directory."
     exit 1
 fi
 
 # Check if frontend files exist
-if [ ! -f "static/app/src/views/firewall.vue" ] || [ ! -f "static/app/src/views/routing.vue" ] || [ ! -f "static/app/src/views/logging.vue" ]; then
-    print_error "Required frontend files not found. Please ensure firewall.vue, routing.vue, and logging.vue exist in static/app/src/views/ directory."
+if [ ! -f "static/app/src/components/dashboardHome.vue" ] || [ ! -f "static/app/src/components/configurationList.vue" ]; then
+    print_error "Required frontend files not found. Please ensure dashboardHome.vue and configurationList.vue exist in static/app/src/components/ directory."
     exit 1
 fi
 
 print_success "All required files are present."
 
-# Set default port from config or use 10086
-PORT=$(grep -o 'port = [0-9]*' wg-dashboard.ini | cut -d' ' -f3)
+# Set default port from config or use 10081
+PORT=$(grep -o 'app_port = [0-9]*' wg-dashboard.ini | cut -d' ' -f3)
 if [ -z "$PORT" ]; then
-    PORT=10086
+    PORT=10081
 fi
 
 print_status "Starting WGDashboard on port $PORT..."
@@ -144,13 +144,13 @@ echo ""
 print_success "🎉 WGDashboard is starting up!"
 echo ""
 print_status "Access the dashboard at: http://localhost:$PORT"
-print_status "Default credentials: admin / admin"
+print_status "Default credentials: Check wg-dashboard.ini for username/password"
 echo ""
 print_status "Features available:"
 print_status "  - WireGuard VPN Management"
-print_status "  - Firewall Rules Management"
-print_status "  - Routing Table Management"
-print_status "  - Comprehensive Logging System"
+print_status "  - User Management System"
+print_status "  - System Status Monitoring"
+print_status "  - Configuration Management"
 echo ""
 print_warning "Press Ctrl+C to stop the server"
 echo ""
