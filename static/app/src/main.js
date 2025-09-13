@@ -1,7 +1,10 @@
 import './css/dashboard.css'
 import 'bootstrap/dist/css/bootstrap.css'
-import 'bootstrap/dist/js/bootstrap.js'
+import * as bootstrap from 'bootstrap'
 import 'bootstrap-icons/font/bootstrap-icons.css'
+
+// Make bootstrap available globally
+window.bootstrap = bootstrap
 import 'animate.css/animate.compat.css'
 import '@vuepic/vue-datepicker/dist/main.css'
 import {createApp, markRaw} from 'vue'

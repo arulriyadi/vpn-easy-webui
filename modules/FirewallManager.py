@@ -337,3 +337,233 @@ class FirewallManager:
                 'status': False,
                 'message': error_msg
             }
+    
+    # =============================================================================
+    # NAT MANAGEMENT METHODS
+    # =============================================================================
+    
+    def get_nat_rules(self) -> List[Dict[str, Any]]:
+        """Get current NAT rules from iptables"""
+        try:
+            # Get NAT table rules
+            result = subprocess.run(['iptables', '-t', 'nat', '-L', '-n', '--line-numbers'], 
+                                  capture_output=True, text=True, check=True)
+            
+            rules = []
+            lines = result.stdout.strip().split('\n')
+            
+            # Skip header lines and find rules
+            for line in lines:
+                if line.strip() and not line.startswith('Chain') and not line.startswith('target') and not line.startswith('num'):
+                    parts = line.strip().split()
+                    if len(parts) >= 4:
+                        rule = {
+                            'id': len(rules) + 1,
+                            'chain': parts[1] if len(parts) > 1 else 'unknown',
+                            'target': parts[0] if len(parts) > 0 else 'unknown',
+                            'protocol': 'any',
+                            'source': 'Any',
+                            'destination': 'Any',
+                            'port': 'Any',
+                            'raw': line.strip()
+                        }
+                        rules.append(rule)
+            
+            self.log_message(f"Retrieved {len(rules)} NAT rules")
+            return rules
+            
+        except Exception as e:
+            self.log_message(f"Error getting NAT rules: {e}")
+            return []
+    
+    def add_nat_rule(self, rule_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Add a new NAT rule"""
+        try:
+            chain = rule_data.get('chain', 'POSTROUTING')
+            target = rule_data.get('target', 'MASQUERADE')
+            source = rule_data.get('source', '')
+            destination = rule_data.get('destination', '')
+            protocol = rule_data.get('protocol', 'any')
+            port = rule_data.get('port', '')
+            
+            # Build iptables command
+            cmd = ['iptables', '-t', 'nat', '-A', chain]
+            
+            # Add source
+            if source:
+                cmd.extend(['-s', source])
+            
+            # Add destination
+            if destination:
+                cmd.extend(['-d', destination])
+            
+            # Add protocol
+            if protocol and protocol != 'any':
+                cmd.extend(['-p', protocol])
+            
+            # Add port
+            if port:
+                if ':' in port:
+                    cmd.extend(['--dport', port])
+                else:
+                    cmd.extend(['--dport', port])
+            
+            # Add target and options
+            cmd.append('-j')
+            cmd.append(target)
+            
+            # Add target-specific options
+            if target == 'SNAT' and rule_data.get('toSource'):
+                cmd.extend(['--to-source', rule_data['toSource']])
+            elif target == 'DNAT' and rule_data.get('toDestination'):
+                cmd.extend(['--to-destination', rule_data['toDestination']])
+            
+            # Execute command
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            
+            # Save rules
+            self.save_firewall_rules()
+            
+            self.log_message(f"NAT rule added: {' '.join(cmd)}")
+            return {
+                'status': True,
+                'message': 'NAT rule added successfully'
+            }
+            
+        except Exception as e:
+            error_msg = f"Error adding NAT rule: {e}"
+            self.log_message(error_msg)
+            return {
+                'status': False,
+                'message': error_msg
+            }
+    
+    def delete_nat_rule(self, rule_id: int) -> Dict[str, Any]:
+        """Delete a NAT rule by ID"""
+        try:
+            # Get current rules
+            rules = self.get_nat_rules()
+            if rule_id < 1 or rule_id > len(rules):
+                return {
+                    'status': False,
+                    'message': f'Invalid rule ID: {rule_id}'
+                }
+            
+            rule = rules[rule_id - 1]
+            chain = rule['chain']
+            
+            # Build delete command
+            cmd = ['iptables', '-t', 'nat', '-D', chain, str(rule_id)]
+            
+            # Execute command
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            
+            # Save rules
+            self.save_firewall_rules()
+            
+            self.log_message(f"NAT rule deleted: {' '.join(cmd)}")
+            return {
+                'status': True,
+                'message': 'NAT rule deleted successfully'
+            }
+            
+        except Exception as e:
+            error_msg = f"Error deleting NAT rule: {e}"
+            self.log_message(error_msg)
+            return {
+                'status': False,
+                'message': error_msg
+            }
+    
+    def reorder_nat_rules(self, new_order: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Reorder NAT rules based on new order"""
+        try:
+            current_rules = self.get_nat_rules()
+            if not current_rules:
+                return {'status': False, 'message': 'No NAT rules found to reorder'}
+            
+            if len(new_order) != len(current_rules):
+                return {'status': False, 'message': f'Invalid order: expected {len(current_rules)} rules, got {len(new_order)}'}
+            
+            # For NAT rules, we'll need to flush and recreate
+            # This is a simplified implementation
+            temp_file = '/tmp/iptables_nat_reorder.rules'
+            result = subprocess.run(['iptables-save', '-t', 'nat'], capture_output=True, text=True, check=True)
+            lines = result.stdout.strip().split('\n')
+            
+            # Filter and reorder NAT rules
+            nat_rules_start = -1
+            for i, line in enumerate(lines):
+                if line.startswith('-A') and any(chain in line for chain in ['POSTROUTING', 'PREROUTING', 'OUTPUT']):
+                    nat_rules_start = i
+                    break
+            
+            if nat_rules_start == -1:
+                return {'status': False, 'message': 'No NAT rules found in current configuration'}
+            
+            new_rules_lines = []
+            for i in range(nat_rules_start):
+                new_rules_lines.append(lines[i])
+            
+            for rule_order in new_order:
+                rule_id = rule_order.get('id')
+                if 1 <= rule_id <= len(current_rules):
+                    rule = current_rules[rule_id - 1]
+                    new_rules_lines.append(rule['raw'])
+            
+            new_rules_lines.append('COMMIT')
+            
+            with open(temp_file, 'w') as f:
+                f.write('\n'.join(new_rules_lines) + '\n')
+            
+            # Apply new order
+            subprocess.run(['iptables', '-t', 'nat', '-F'], check=True)
+            with open(temp_file, 'r') as f:
+                subprocess.run(['iptables-restore'], stdin=f, check=True)
+            
+            self.save_firewall_rules()
+            os.remove(temp_file)
+            
+            self.log_message(f"NAT rules reordered successfully")
+            return {'status': True, 'message': 'NAT rules reordered successfully'}
+            
+        except Exception as e:
+            error_msg = f"Error reordering NAT rules: {e}"
+            self.log_message(error_msg)
+            return {'status': False, 'message': error_msg}
+    
+    def reload_nat_rules(self) -> Dict[str, Any]:
+        """Reload NAT rules from file"""
+        try:
+            # Determine rules file path
+            if self.is_ubuntu:
+                rules_file = self.rules_file_ubuntu
+            else:
+                rules_file = self.rules_file_centos
+            
+            if not os.path.exists(rules_file):
+                return {
+                    'status': False,
+                    'message': f'Rules file not found: {rules_file}'
+                }
+            
+            # Flush NAT table
+            subprocess.run(['iptables', '-t', 'nat', '-F'], check=True)
+            
+            # Load rules
+            with open(rules_file, 'r') as f:
+                subprocess.run(['iptables-restore'], stdin=f, check=True)
+            
+            self.log_message(f"NAT rules reloaded from {rules_file}")
+            return {
+                'status': True,
+                'message': 'NAT rules reloaded successfully'
+            }
+            
+        except Exception as e:
+            error_msg = f"Error reloading NAT rules: {e}"
+            self.log_message(error_msg)
+            return {
+                'status': False,
+                'message': error_msg
+            }

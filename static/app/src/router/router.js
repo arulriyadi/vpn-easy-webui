@@ -81,11 +81,19 @@ const router = createRouter({
 					}
 				},
 				{
-					name: "Firewall Management",
-					path: '/firewall',
-					component: () => import("@/views/firewall.vue"),
+					name: "Firewall Filter",
+					path: '/firewall/filter',
+					component: () => import("@/views/firewallFilter.vue"),
 					meta: {
-						title: "Firewall Management"
+						title: "Firewall Filter"
+					}
+				},
+				{
+					name: "Firewall NAT",
+					path: '/firewall/nat',
+					component: () => import("@/views/firewallNat.vue"),
+					meta: {
+						title: "Firewall NAT"
 					}
 				},
 				{

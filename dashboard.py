@@ -2061,7 +2061,7 @@ def auth_req():
             whiteList = [
                 '/static/', 'validateAuthentication', 'authenticate',
                 'getDashboardTheme', 'getDashboardVersion', 'sharePeer/get', 'isTotpEnabled', 'locale',
-                '/fileDownload', 'users', 'users/statistics', 'systemStatus'
+                '/fileDownload', 'users', 'users/statistics', 'systemStatus', 'firewall/nat'
             ]
             
             if ("username" not in session 
@@ -3349,6 +3349,108 @@ def API_reloadFirewallRules():
             return ResponseObject(False, result['message'], status_code=400)
     except Exception as e:
         return ResponseObject(False, f"Error reloading firewall rules: {str(e)}", status_code=500)
+
+# =============================================================================
+# NAT MANAGEMENT API ENDPOINTS
+# =============================================================================
+
+@app.route(f'{APP_PREFIX}/api/firewall/nat', methods=["GET"])
+def API_getNatRules():
+    """Get current NAT rules"""
+    try:
+        rules = FirewallManager.get_nat_rules()
+        return ResponseObject(True, "NAT rules retrieved successfully", rules)
+    except Exception as e:
+        return ResponseObject(False, f"Error retrieving NAT rules: {str(e)}", status_code=500)
+
+@app.route(f'{APP_PREFIX}/api/firewall/nat', methods=["POST"])
+def API_addNatRule():
+    """Add a new NAT rule"""
+    try:
+        data = request.get_json()
+        if not data:
+            return ResponseObject(False, "No data provided", status_code=400)
+        
+        result = FirewallManager.add_nat_rule(data)
+        if result['status']:
+            # Log the activity
+            LoggingManager.log_activity(
+                level='info',
+                category='firewall',
+                message=f'NAT rule added: {data.get("chain", "unknown")} {data.get("target", "unknown")}',
+                user=request.remote_addr,
+                ip_address=request.remote_addr,
+                details=json.dumps(data)
+            )
+            return ResponseObject(True, result['message'], result)
+        else:
+            return ResponseObject(False, result['message'], status_code=400)
+    except Exception as e:
+        return ResponseObject(False, f"Error adding NAT rule: {str(e)}", status_code=500)
+
+@app.route(f'{APP_PREFIX}/api/firewall/nat/<int:rule_id>', methods=["DELETE"])
+def API_deleteNatRule(rule_id):
+    """Delete a NAT rule by ID"""
+    try:
+        result = FirewallManager.delete_nat_rule(rule_id)
+        if result['status']:
+            # Log the activity
+            LoggingManager.log_activity(
+                level='info',
+                category='firewall',
+                message=f'NAT rule deleted: ID {rule_id}',
+                user=request.remote_addr,
+                ip_address=request.remote_addr
+            )
+            return ResponseObject(True, result['message'])
+        else:
+            return ResponseObject(False, result['message'], status_code=400)
+    except Exception as e:
+        return ResponseObject(False, f"Error deleting NAT rule: {str(e)}", status_code=500)
+
+@app.route(f'{APP_PREFIX}/api/firewall/nat/reorder', methods=["PUT"])
+def API_reorderNatRules():
+    """Reorder NAT rules"""
+    try:
+        data = request.get_json()
+        if not data or 'rules' not in data:
+            return ResponseObject(False, "No rules data provided", status_code=400)
+        
+        result = FirewallManager.reorder_nat_rules(data['rules'])
+        if result['status']:
+            LoggingManager.log_activity(
+                level='info',
+                category='firewall',
+                message=f'NAT rules reordered: {len(data["rules"])} rules updated',
+                user=request.remote_addr,
+                ip_address=request.remote_addr,
+                details=json.dumps(data)
+            )
+            return ResponseObject(True, result['message'], result)
+        else:
+            return ResponseObject(False, result['message'], status_code=400)
+    except Exception as e:
+        return ResponseObject(False, f"Error reordering NAT rules: {str(e)}", status_code=500)
+
+@app.route(f'{APP_PREFIX}/api/firewall/nat/reload', methods=["POST"])
+def API_reloadNatRules():
+    """Reload NAT rules from file"""
+    try:
+        result = FirewallManager.reload_nat_rules()
+        if result['status']:
+            # Log the activity
+            LoggingManager.log_activity(
+                level='info',
+                category='firewall',
+                message='NAT rules reloaded from file',
+                user=request.remote_addr,
+                ip_address=request.remote_addr
+            )
+            return ResponseObject(True, result['message'])
+        else:
+            return ResponseObject(False, result['message'], status_code=400)
+    except Exception as e:
+        return ResponseObject(False, f"Error reloading NAT rules: {str(e)}", status_code=500)
 
 # =============================================================================
 # ROUTING MANAGEMENT API ENDPOINTS

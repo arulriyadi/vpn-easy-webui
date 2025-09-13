@@ -15,16 +15,17 @@ export default {
 		const dashboardConfigurationStore = DashboardConfigurationStore();
 		return {wireguardConfigurationsStore, dashboardConfigurationStore}
 	},
-	data(){
-		return {
-			updateAvailable: false,
-			updateMessage: "Checking for update...",
-			updateUrl: "",
-			openHelpModal: false,
-			openAgentModal: false,
-			showVpnDropdown: false,
-		}
-	},
+		data(){
+			return {
+				updateAvailable: false,
+				updateMessage: "Checking for update...",
+				updateUrl: "",
+				openHelpModal: false,
+				openAgentModal: false,
+				showVpnDropdown: false,
+				showFirewallDropdown: false,
+			}
+		},
 	computed: {
 		getActiveCrossServer(){
 			if (this.dashboardConfigurationStore.ActiveServerConfiguration){
@@ -51,6 +52,9 @@ export default {
 	methods: {
 		toggleVpnDropdown() {
 			this.showVpnDropdown = !this.showVpnDropdown;
+		},
+		toggleFirewallDropdown() {
+			this.showFirewallDropdown = !this.showFirewallDropdown;
 		}
 	}
 }
@@ -125,6 +129,44 @@ export default {
 				<hr class="text-body my-2">
 				<h6 class="sidebar-heading px-3 mt-3 mb-1 text-center" 
 				    :class="dashboardConfigurationStore.Configuration?.Server?.dashboard_theme === 'dark' ? 'text-light-emphasis' : 'text-muted'">
+					<LocaleText t="Firewall Management"></LocaleText>
+				</h6>
+				<ul class="nav flex-column px-2 gap-1">
+					<li class="nav-item">
+						<a class="nav-link rounded-3 dropdown-toggle" 
+						   @click.prevent="toggleFirewallDropdown" 
+						   role="button" 
+						   :class="{ 'show': showFirewallDropdown }">
+							<i class="bi bi-shield-check me-2"></i>
+							<LocaleText t="Firewall Management"></LocaleText>
+						</a>
+						<div class="dropdown-menu" 
+						     :class="{ 'show': showFirewallDropdown }"
+						     style="position: static; float: none; width: auto; margin-top: 0; background-color: transparent; border: none; box-shadow: none;">
+							<div class="ms-4 mt-1">
+								<!-- Firewall Filter -->
+								<RouterLink to="/firewall/filter" 
+											class="nav-link rounded-3"
+											active-class="active"
+											style="padding: 0.5rem 1rem;">
+									<i class="bi bi-funnel me-2"></i>
+									<LocaleText t="Firewall Filter"></LocaleText>
+								</RouterLink>
+								<!-- Firewall NAT -->
+								<RouterLink to="/firewall/nat" 
+											class="nav-link rounded-3"
+											active-class="active"
+											style="padding: 0.5rem 1rem;">
+									<i class="bi bi-arrow-left-right me-2"></i>
+									<LocaleText t="Firewall NAT"></LocaleText>
+								</RouterLink>
+							</div>
+						</div>
+					</li>
+				</ul>
+				<hr class="text-body my-2">
+				<h6 class="sidebar-heading px-3 mt-3 mb-1 text-center" 
+				    :class="dashboardConfigurationStore.Configuration?.Server?.dashboard_theme === 'dark' ? 'text-light-emphasis' : 'text-muted'">
 					<LocaleText t="Tools"></LocaleText>
 				</h6>
 				<ul class="nav flex-column px-2 gap-1">
@@ -132,12 +174,6 @@ export default {
 						<RouterLink to="/system_status" class="nav-link rounded-3" active-class="active">
 							<i class="bi bi-cpu me-2"></i>
 							<LocaleText t="System Status"></LocaleText>
-						</RouterLink>
-					</li>
-					<li class="nav-item">
-						<RouterLink to="/firewall" class="nav-link rounded-3" active-class="active">
-							<i class="bi bi-shield-check me-2"></i>
-							<LocaleText t="Firewall Management"></LocaleText>
 						</RouterLink>
 					</li>
 					<li class="nav-item">
