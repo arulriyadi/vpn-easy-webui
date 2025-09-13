@@ -3305,6 +3305,31 @@ def API_deleteFirewallRule(rule_id):
     except Exception as e:
         return ResponseObject(False, f"Error deleting firewall rule: {str(e)}", status_code=500)
 
+@app.route(f'{APP_PREFIX}/api/firewall/reorder', methods=["PUT"])
+def API_reorderFirewallRules():
+    """Reorder firewall rules"""
+    try:
+        data = request.get_json()
+        if not data or 'rules' not in data:
+            return ResponseObject(False, "No rules data provided", status_code=400)
+        
+        result = FirewallManager.reorder_firewall_rules(data['rules'])
+        if result['status']:
+            # Log the activity
+            LoggingManager.log_activity(
+                level='info',
+                category='firewall',
+                message=f'Firewall rules reordered: {len(data["rules"])} rules updated',
+                user=request.remote_addr,
+                ip_address=request.remote_addr,
+                details=json.dumps(data)
+            )
+            return ResponseObject(True, result['message'], result)
+        else:
+            return ResponseObject(False, result['message'], status_code=400)
+    except Exception as e:
+        return ResponseObject(False, f"Error reordering firewall rules: {str(e)}", status_code=500)
+
 @app.route(f'{APP_PREFIX}/api/firewall/reload', methods=["POST"])
 def API_reloadFirewallRules():
     """Reload firewall rules from file"""

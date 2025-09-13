@@ -215,6 +215,92 @@ class FirewallManager:
             self.log_message(f"Error saving firewall rules: {e}")
             return False
     
+    def reorder_firewall_rules(self, new_order: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Reorder firewall rules based on new order"""
+        try:
+            # Get current rules
+            current_rules = self.get_firewall_rules()
+            if not current_rules:
+                return {
+                    'status': False,
+                    'message': 'No firewall rules found to reorder'
+                }
+            
+            # Validate new order
+            if len(new_order) != len(current_rules):
+                return {
+                    'status': False,
+                    'message': f'Invalid order: expected {len(current_rules)} rules, got {len(new_order)}'
+                }
+            
+            # Create temporary rules file with new order
+            temp_file = '/tmp/iptables_reorder.rules'
+            
+            # Start with iptables-save header
+            result = subprocess.run(['iptables-save'], capture_output=True, text=True, check=True)
+            lines = result.stdout.strip().split('\n')
+            
+            # Find rules section
+            rules_start = -1
+            for i, line in enumerate(lines):
+                if line.startswith('-A'):
+                    rules_start = i
+                    break
+            
+            if rules_start == -1:
+                return {
+                    'status': False,
+                    'message': 'No rules found in current iptables configuration'
+                }
+            
+            # Build new rules file
+            new_rules_lines = []
+            
+            # Add header lines (before rules)
+            for i in range(rules_start):
+                new_rules_lines.append(lines[i])
+            
+            # Add rules in new order
+            for rule_order in new_order:
+                rule_id = rule_order.get('id')
+                if 1 <= rule_id <= len(current_rules):
+                    rule = current_rules[rule_id - 1]
+                    new_rules_lines.append(rule['raw'])
+            
+            # Add commit line
+            new_rules_lines.append('COMMIT')
+            
+            # Write temporary file
+            with open(temp_file, 'w') as f:
+                f.write('\n'.join(new_rules_lines) + '\n')
+            
+            # Clear existing rules
+            subprocess.run(['iptables', '-F'], check=True)
+            
+            # Restore with new order
+            with open(temp_file, 'r') as f:
+                subprocess.run(['iptables-restore'], stdin=f, check=True)
+            
+            # Save the new order
+            self.save_firewall_rules()
+            
+            # Clean up
+            os.remove(temp_file)
+            
+            self.log_message(f"Firewall rules reordered successfully")
+            return {
+                'status': True,
+                'message': 'Firewall rules reordered successfully'
+            }
+            
+        except Exception as e:
+            error_msg = f"Error reordering firewall rules: {e}"
+            self.log_message(error_msg)
+            return {
+                'status': False,
+                'message': error_msg
+            }
+
     def reload_firewall_rules(self) -> Dict[str, Any]:
         """Reload firewall rules from file"""
         try:

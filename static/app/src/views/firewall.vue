@@ -33,6 +33,7 @@
               <table class="table table-striped table-hover">
                 <thead class="table-dark">
                   <tr>
+                    <th width="40"><i class="bi bi-grip-vertical text-muted"></i></th>
                     <th>ID</th>
                     <th>Chain</th>
                     <th>Source</th>
@@ -44,8 +45,23 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="rule in firewallRules" :key="rule.id">
-                    <td>{{ rule.id }}</td>
+                  <tr 
+                    v-for="(rule, index) in firewallRules" 
+                    :key="rule.id"
+                    :draggable="true"
+                    @dragstart="handleDragStart(index, $event)"
+                    @dragover="handleDragOver($event)"
+                    @drop="handleDrop(index, $event)"
+                    @dragend="handleDragEnd"
+                    :class="{ 'drag-over': draggedIndex === index && dragOverIndex === index }"
+                    class="draggable-row"
+                  >
+                    <td class="drag-handle">
+                      <i class="bi bi-grip-vertical text-muted cursor-grab"></i>
+                    </td>
+                    <td>
+                      <span class="badge bg-primary">{{ index + 1 }}</span>
+                    </td>
                     <td>
                       <span class="badge bg-secondary">{{ rule.chain || 'N/A' }}</span>
                     </td>
@@ -75,17 +91,30 @@
           <!-- Action Buttons Row (pfSense style) -->
           <div class="card-footer bg-subtle border-top">
             <div class="row align-items-center">
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <small class="text-muted">
                   <i class="bi bi-info-circle me-1"></i>
                   Total Rules: {{ firewallRules.length }}
+                  <span v-if="hasUnsavedChanges" class="text-warning ms-2">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    Unsaved changes
+                  </span>
                 </small>
               </div>
-              <div class="col-md-6 text-end">
+              <div class="col-md-8 text-end">
                 <div class="btn-group" role="group">
                   <button class="btn btn-primary" @click="showAddRuleModal = true">
                     <i class="bi bi-plus-circle me-1"></i>
                     Add Rule
+                  </button>
+                  <button 
+                    class="btn btn-success" 
+                    @click="saveRuleOrder"
+                    :disabled="!hasUnsavedChanges || savingOrder"
+                  >
+                    <i v-if="savingOrder" class="bi bi-hourglass-split me-1"></i>
+                    <i v-else class="bi bi-check-circle me-1"></i>
+                    {{ savingOrder ? 'Saving...' : 'Save Changes' }}
                   </button>
                   <button class="btn btn-outline-secondary" @click="reloadRules">
                     <i class="bi bi-arrow-clockwise me-1"></i>
@@ -197,6 +226,7 @@ const loading = ref(true)
 const addingRule = ref(false)
 const showAddRuleModal = ref(false)
 const firewallRules = ref([])
+const originalRules = ref([])
 const newRule = ref({
   chain: '',
   target: '',
@@ -211,6 +241,12 @@ const toast = ref({
   message: ''
 })
 
+// Drag & Drop variables
+const draggedIndex = ref(null)
+const dragOverIndex = ref(null)
+const hasUnsavedChanges = ref(false)
+const savingOrder = ref(false)
+
 // Methods
 const loadFirewallRules = async () => {
   try {
@@ -218,6 +254,8 @@ const loadFirewallRules = async () => {
     const response = await fetchGet('/api/firewall/rules')
     if (response.status) {
       firewallRules.value = response.data || []
+      originalRules.value = JSON.parse(JSON.stringify(firewallRules.value))
+      hasUnsavedChanges.value = false
     } else {
       showToast('error', 'Failed to load firewall rules')
     }
@@ -307,6 +345,80 @@ const getTargetBadgeClass = (target) => {
     case 'DROP': return 'bg-danger'
     case 'REJECT': return 'bg-warning'
     default: return 'bg-secondary'
+  }
+}
+
+// Drag & Drop Methods
+const handleDragStart = (index, event) => {
+  draggedIndex.value = index
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/html', event.target.outerHTML)
+  event.target.style.opacity = '0.5'
+}
+
+const handleDragOver = (event) => {
+  event.preventDefault()
+  event.dataTransfer.dropEffect = 'move'
+}
+
+const handleDrop = (index, event) => {
+  event.preventDefault()
+  
+  if (draggedIndex.value === null || draggedIndex.value === index) {
+    return
+  }
+  
+  // Move rule in array
+  const draggedRule = firewallRules.value[draggedIndex.value]
+  firewallRules.value.splice(draggedIndex.value, 1)
+  firewallRules.value.splice(index, 0, draggedRule)
+  
+  // Mark as having unsaved changes
+  hasUnsavedChanges.value = true
+  
+  draggedIndex.value = null
+  dragOverIndex.value = null
+}
+
+const handleDragEnd = (event) => {
+  event.target.style.opacity = ''
+  draggedIndex.value = null
+  dragOverIndex.value = null
+}
+
+const saveRuleOrder = async () => {
+  try {
+    savingOrder.value = true
+    
+    // Prepare rules data for API
+    const rulesData = firewallRules.value.map((rule, index) => ({
+      id: rule.id,
+      position: index + 1
+    }))
+    
+    const response = await fetch('/api/firewall/reorder', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ rules: rulesData })
+    }).then(res => res.json())
+    
+    if (response.status) {
+      showToast('success', 'Firewall rules reordered successfully')
+      originalRules.value = JSON.parse(JSON.stringify(firewallRules.value))
+      hasUnsavedChanges.value = false
+    } else {
+      showToast('error', response.message || 'Failed to save rule order')
+      // Revert to original order
+      firewallRules.value = JSON.parse(JSON.stringify(originalRules.value))
+    }
+  } catch (error) {
+    showToast('error', 'Error saving rule order: ' + error.message)
+    // Revert to original order
+    firewallRules.value = JSON.parse(JSON.stringify(originalRules.value))
+  } finally {
+    savingOrder.value = false
   }
 }
 
@@ -499,5 +611,62 @@ onMounted(() => {
 .badge.bg-warning {
   background-color: #ffc107 !important;
   color: #000000 !important;
+}
+
+/* Drag & Drop Styling */
+.draggable-row {
+  cursor: move;
+  transition: all 0.2s ease;
+}
+
+.draggable-row:hover {
+  background-color: #f8f9fa;
+}
+
+[data-bs-theme="dark"] .draggable-row:hover {
+  background-color: #2d3748;
+}
+
+.draggable-row.drag-over {
+  border-top: 2px solid #0d6efd;
+  background-color: #e3f2fd;
+}
+
+[data-bs-theme="dark"] .draggable-row.drag-over {
+  border-top: 2px solid #0d6efd;
+  background-color: #1e3a8a;
+}
+
+.drag-handle {
+  cursor: grab;
+  user-select: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.cursor-grab {
+  cursor: grab;
+}
+
+.cursor-grab:active {
+  cursor: grabbing;
+}
+
+/* Save button styling */
+.btn-success {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+.btn-success:hover:not(:disabled) {
+  background-color: #157347;
+  border-color: #146c43;
+}
+
+.btn-success:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>
