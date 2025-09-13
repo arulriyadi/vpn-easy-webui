@@ -44,41 +44,58 @@ class FirewallManager:
             pass  # Fallback to file logging if centralized logging fails
     
     def get_firewall_rules(self) -> List[Dict[str, Any]]:
-        """Get current iptables rules"""
+        """Get current iptables filter rules (INPUT, OUTPUT, FORWARD only)"""
         try:
-            # Get iptables rules
+            # Get iptables rules from filter table only
             result = subprocess.run(['iptables-save'], capture_output=True, text=True, check=True)
             rules = []
+            current_table = 'filter'  # Default to filter table
             
             for line in result.stdout.strip().split('\n'):
-                if line.startswith('-A'):
+                # Check for table declaration
+                if line.startswith('*'):
+                    current_table = line[1:]  # Remove the * prefix
+                    continue
+                
+                # Only process rules from filter table
+                if current_table == 'filter' and line.startswith('-A'):
                     # Parse rule
                     parts = line.split()
                     if len(parts) >= 2:
                         chain = parts[1]
-                        rule_data = {
-                            'id': len(rules) + 1,
-                            'chain': chain,
-                            'rule': line,
-                            'raw': line
-                        }
                         
-                        # Parse common parameters
-                        for i, part in enumerate(parts[2:], 2):
-                            if part == '-s':
-                                rule_data['source'] = parts[i + 1] if i + 1 < len(parts) else ''
-                            elif part == '-d':
-                                rule_data['destination'] = parts[i + 1] if i + 1 < len(parts) else ''
-                            elif part == '-p':
-                                rule_data['protocol'] = parts[i + 1] if i + 1 < len(parts) else ''
-                            elif part == '--dport':
-                                rule_data['port'] = parts[i + 1] if i + 1 < len(parts) else ''
-                            elif part == '-j':
-                                rule_data['target'] = parts[i + 1] if i + 1 < len(parts) else ''
-                        
-                        rules.append(rule_data)
+                        # Only include filter table chains (INPUT, OUTPUT, FORWARD)
+                        if chain in ['INPUT', 'OUTPUT', 'FORWARD']:
+                            rule_data = {
+                                'id': len(rules) + 1,
+                                'chain': chain,
+                                'rule': line,
+                                'raw': line,
+                                'source': 'Any',
+                                'destination': 'Any',
+                                'protocol': 'Any',
+                                'port': 'Any',
+                                'target': 'ACCEPT'
+                            }
+                            
+                            # Parse common parameters
+                            for i, part in enumerate(parts[2:], 2):
+                                if part == '-s' and i + 1 < len(parts):
+                                    rule_data['source'] = parts[i + 1]
+                                elif part == '-d' and i + 1 < len(parts):
+                                    rule_data['destination'] = parts[i + 1]
+                                elif part == '-p' and i + 1 < len(parts):
+                                    rule_data['protocol'] = parts[i + 1]
+                                elif part == '--dport' and i + 1 < len(parts):
+                                    rule_data['port'] = parts[i + 1]
+                                elif part == '--sport' and i + 1 < len(parts):
+                                    rule_data['port'] = parts[i + 1]
+                                elif part == '-j' and i + 1 < len(parts):
+                                    rule_data['target'] = parts[i + 1]
+                            
+                            rules.append(rule_data)
             
-            self.log_message(f"Retrieved {len(rules)} firewall rules")
+            self.log_message(f"Retrieved {len(rules)} filter firewall rules")
             return rules
             
         except subprocess.CalledProcessError as e:
@@ -89,14 +106,19 @@ class FirewallManager:
             return []
     
     def add_firewall_rule(self, rule_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Add a new firewall rule"""
+        """Add a new firewall rule to filter table"""
         try:
-            # Build iptables command
+            # Build iptables command for filter table
             cmd = ['iptables']
             
-            # Add chain
-            if 'chain' in rule_data:
+            # Add chain (only allow filter table chains)
+            if 'chain' in rule_data and rule_data['chain'] in ['INPUT', 'OUTPUT', 'FORWARD']:
                 cmd.extend(['-A', rule_data['chain']])
+            else:
+                return {
+                    'status': False,
+                    'message': 'Invalid chain. Only INPUT, OUTPUT, and FORWARD are allowed for filter rules.'
+                }
             
             # Add source
             if 'source' in rule_data and rule_data['source']:
@@ -124,7 +146,7 @@ class FirewallManager:
             # Save rules
             self.save_firewall_rules()
             
-            self.log_message(f"Added firewall rule: {' '.join(cmd)}")
+            self.log_message(f"Added filter firewall rule: {' '.join(cmd)}")
             return {
                 'status': True,
                 'message': 'Firewall rule added successfully',
@@ -147,7 +169,7 @@ class FirewallManager:
             }
     
     def delete_firewall_rule(self, rule_id: int) -> Dict[str, Any]:
-        """Delete a firewall rule by ID"""
+        """Delete a firewall rule by ID from filter table"""
         try:
             rules = self.get_firewall_rules()
             if rule_id < 1 or rule_id > len(rules):
@@ -169,7 +191,7 @@ class FirewallManager:
             # Save rules
             self.save_firewall_rules()
             
-            self.log_message(f"Deleted firewall rule: {' '.join(delete_cmd)}")
+            self.log_message(f"Deleted filter firewall rule: {' '.join(delete_cmd)}")
             return {
                 'status': True,
                 'message': 'Firewall rule deleted successfully'
@@ -216,7 +238,7 @@ class FirewallManager:
             return False
     
     def reorder_firewall_rules(self, new_order: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Reorder firewall rules based on new order"""
+        """Reorder firewall rules based on new order (filter table only)"""
         try:
             # Get current rules
             current_rules = self.get_firewall_rules()
@@ -240,17 +262,21 @@ class FirewallManager:
             result = subprocess.run(['iptables-save'], capture_output=True, text=True, check=True)
             lines = result.stdout.strip().split('\n')
             
-            # Find rules section
+            # Find filter table rules section
             rules_start = -1
+            current_table = 'filter'
             for i, line in enumerate(lines):
-                if line.startswith('-A'):
+                if line.startswith('*'):
+                    current_table = line[1:]
+                    continue
+                if current_table == 'filter' and line.startswith('-A'):
                     rules_start = i
                     break
             
             if rules_start == -1:
                 return {
                     'status': False,
-                    'message': 'No rules found in current iptables configuration'
+                    'message': 'No filter rules found in current iptables configuration'
                 }
             
             # Build new rules file
@@ -274,7 +300,7 @@ class FirewallManager:
             with open(temp_file, 'w') as f:
                 f.write('\n'.join(new_rules_lines) + '\n')
             
-            # Clear existing rules
+            # Clear existing rules (filter table only)
             subprocess.run(['iptables', '-F'], check=True)
             
             # Restore with new order
@@ -287,7 +313,7 @@ class FirewallManager:
             # Clean up
             os.remove(temp_file)
             
-            self.log_message(f"Firewall rules reordered successfully")
+            self.log_message(f"Filter firewall rules reordered successfully")
             return {
                 'status': True,
                 'message': 'Firewall rules reordered successfully'
@@ -302,7 +328,7 @@ class FirewallManager:
             }
 
     def reload_firewall_rules(self) -> Dict[str, Any]:
-        """Reload firewall rules from file"""
+        """Reload firewall rules from file (filter table only)"""
         try:
             # Determine which file to use
             if os.path.exists('/etc/debian_version'):
@@ -316,7 +342,7 @@ class FirewallManager:
                     'message': f'No rules file found at {rules_file}'
                 }
             
-            # Clear existing rules (but keep custom chains)
+            # Clear existing rules (filter table only, but keep custom chains)
             subprocess.run(['iptables', '-F'], check=True)
             # Don't delete custom chains with -X as it might cause errors
             
@@ -324,7 +350,7 @@ class FirewallManager:
             with open(rules_file, 'r') as f:
                 subprocess.run(['iptables-restore'], stdin=f, check=True)
             
-            self.log_message(f"Firewall rules reloaded from {rules_file}")
+            self.log_message(f"Filter firewall rules reloaded from {rules_file}")
             return {
                 'status': True,
                 'message': 'Firewall rules reloaded successfully'
@@ -343,31 +369,49 @@ class FirewallManager:
     # =============================================================================
     
     def get_nat_rules(self) -> List[Dict[str, Any]]:
-        """Get current NAT rules from iptables"""
+        """Get current NAT rules from iptables NAT table"""
         try:
-            # Get NAT table rules
-            result = subprocess.run(['iptables', '-t', 'nat', '-L', '-n', '--line-numbers'], 
-                                  capture_output=True, text=True, check=True)
-            
+            # Get NAT table rules using iptables-save for better parsing
+            result = subprocess.run(['iptables-save', '-t', 'nat'], capture_output=True, text=True, check=True)
             rules = []
-            lines = result.stdout.strip().split('\n')
             
-            # Skip header lines and find rules
-            for line in lines:
-                if line.strip() and not line.startswith('Chain') and not line.startswith('target') and not line.startswith('num'):
-                    parts = line.strip().split()
-                    if len(parts) >= 4:
-                        rule = {
-                            'id': len(rules) + 1,
-                            'chain': parts[1] if len(parts) > 1 else 'unknown',
-                            'target': parts[0] if len(parts) > 0 else 'unknown',
-                            'protocol': 'any',
-                            'source': 'Any',
-                            'destination': 'Any',
-                            'port': 'Any',
-                            'raw': line.strip()
-                        }
-                        rules.append(rule)
+            for line in result.stdout.strip().split('\n'):
+                if line.startswith('-A'):
+                    # Parse rule
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        chain = parts[1]
+                        
+                        # Only include NAT table chains (PREROUTING, POSTROUTING, OUTPUT)
+                        if chain in ['PREROUTING', 'POSTROUTING', 'OUTPUT']:
+                            rule_data = {
+                                'id': len(rules) + 1,
+                                'chain': chain,
+                                'rule': line,
+                                'raw': line,
+                                'source': 'Any',
+                                'destination': 'Any',
+                                'protocol': 'Any',
+                                'port': 'Any',
+                                'target': 'ACCEPT'
+                            }
+                            
+                            # Parse common parameters
+                            for i, part in enumerate(parts[2:], 2):
+                                if part == '-s' and i + 1 < len(parts):
+                                    rule_data['source'] = parts[i + 1]
+                                elif part == '-d' and i + 1 < len(parts):
+                                    rule_data['destination'] = parts[i + 1]
+                                elif part == '-p' and i + 1 < len(parts):
+                                    rule_data['protocol'] = parts[i + 1]
+                                elif part == '--dport' and i + 1 < len(parts):
+                                    rule_data['port'] = parts[i + 1]
+                                elif part == '--sport' and i + 1 < len(parts):
+                                    rule_data['port'] = parts[i + 1]
+                                elif part == '-j' and i + 1 < len(parts):
+                                    rule_data['target'] = parts[i + 1]
+                            
+                            rules.append(rule_data)
             
             self.log_message(f"Retrieved {len(rules)} NAT rules")
             return rules
@@ -377,7 +421,7 @@ class FirewallManager:
             return []
     
     def add_nat_rule(self, rule_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Add a new NAT rule"""
+        """Add a new NAT rule to NAT table"""
         try:
             chain = rule_data.get('chain', 'POSTROUTING')
             target = rule_data.get('target', 'MASQUERADE')
@@ -386,7 +430,14 @@ class FirewallManager:
             protocol = rule_data.get('protocol', 'any')
             port = rule_data.get('port', '')
             
-            # Build iptables command
+            # Validate chain (only allow NAT table chains)
+            if chain not in ['PREROUTING', 'POSTROUTING', 'OUTPUT']:
+                return {
+                    'status': False,
+                    'message': 'Invalid chain. Only PREROUTING, POSTROUTING, and OUTPUT are allowed for NAT rules.'
+                }
+            
+            # Build iptables command for NAT table
             cmd = ['iptables', '-t', 'nat', '-A', chain]
             
             # Add source
@@ -439,7 +490,7 @@ class FirewallManager:
             }
     
     def delete_nat_rule(self, rule_id: int) -> Dict[str, Any]:
-        """Delete a NAT rule by ID"""
+        """Delete a NAT rule by ID from NAT table"""
         try:
             # Get current rules
             rules = self.get_nat_rules()
@@ -452,7 +503,7 @@ class FirewallManager:
             rule = rules[rule_id - 1]
             chain = rule['chain']
             
-            # Build delete command
+            # Build delete command for NAT table
             cmd = ['iptables', '-t', 'nat', '-D', chain, str(rule_id)]
             
             # Execute command
@@ -476,7 +527,7 @@ class FirewallManager:
             }
     
     def reorder_nat_rules(self, new_order: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Reorder NAT rules based on new order"""
+        """Reorder NAT rules based on new order (NAT table only)"""
         try:
             current_rules = self.get_nat_rules()
             if not current_rules:
@@ -516,7 +567,7 @@ class FirewallManager:
             with open(temp_file, 'w') as f:
                 f.write('\n'.join(new_rules_lines) + '\n')
             
-            # Apply new order
+            # Apply new order (NAT table only)
             subprocess.run(['iptables', '-t', 'nat', '-F'], check=True)
             with open(temp_file, 'r') as f:
                 subprocess.run(['iptables-restore'], stdin=f, check=True)
@@ -533,10 +584,10 @@ class FirewallManager:
             return {'status': False, 'message': error_msg}
     
     def reload_nat_rules(self) -> Dict[str, Any]:
-        """Reload NAT rules from file"""
+        """Reload NAT rules from file (NAT table only)"""
         try:
             # Determine rules file path
-            if self.is_ubuntu:
+            if os.path.exists('/etc/debian_version'):
                 rules_file = self.rules_file_ubuntu
             else:
                 rules_file = self.rules_file_centos
